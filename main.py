@@ -1,16 +1,17 @@
-# This is a sample Python script.
+from core.config import load_global_config, save_global_config
+from core.projects import init_environment
+from core.globalvars import bcolors
+import prompt_toolkit as pt
 
-# Press Mayús+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+def main():
+    print(f"{bcolors.BOLD}Welcome to OSCPTFM 0.a1! (Name pending){bcolors.RESET}")
+    config = load_global_config()
+    init_environment(config)
+    save_global_config(config)
+    print(f"\n{bcolors.OKCYAN}[+] Toolkit environment is ready.{bcolors.RESET}")
+    print(f"______________________________________________________________________")
 
+    #
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+if __name__ == "__main__":
+    main()
