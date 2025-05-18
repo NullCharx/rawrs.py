@@ -1,0 +1,7 @@
+{
+  "os": "Windows",
+  "projects_dir": "projects",
+  "default_project": "default_project",
+  "last_project": "default_project",
+  "debug_verbose": true
+}
