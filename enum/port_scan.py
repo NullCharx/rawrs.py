@@ -38,4 +38,5 @@ class nmapWrapper:
             print("nmap wasn't found on regular paths! Most enum functions won't work unless you specify a path in the settings menu")
 
 
-    def regularPortScanning(self):ç
+    def regularPortScanning(self):
+        print("A")

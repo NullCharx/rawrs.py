@@ -3,11 +3,7 @@ from pathlib import Path
 from core.globalvars import bcolors
 
 """Load and save"""
-def init_environment(config):
-    """Create main projects dir and default project if needed."""
-    projects_path = Path(config["projects_dir"])
-    projects_path.mkdir(exist_ok=True)
-    create_project(config["default_project"], config)
+
 
 def create_project(name, config):
     """Create a project folder with default structure."""
@@ -34,9 +30,9 @@ list_projects()
 
 delete_project(name)
 
-load_context(project_name)
+load_context(project_name) (loads the volatile data that needs to be on memory like targets, scans, tunnels...)
 
-save_context(project_name, context)
+save_context(project_name, context) (Saves the volatile data that needs to be on memory like targets, scans, tunnels...)
 
 switch_project(name)
 '''
