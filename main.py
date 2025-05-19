@@ -1,8 +1,9 @@
 from pathlib import Path
 
 from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.widgets import Dialog, Label, Button, Box
-from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.widgets import Label, Button
+from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
 from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
@@ -10,95 +11,106 @@ from core.config import load_global_config, save_global_config
 from project_manager.projects import create_project
 from core.globalvars import bcolors
 
-def laod_last_project_button():
-    """Loads last project directly"""
-    print("a")
+def init_environment(config):
+    projects_path = Path(config["projects_dir"])
+    projects_path.mkdir(exist_ok=True)
+    create_project(config["default_project"], config)
 
-def load_default_project_button():
-    """Loads the app default project"""
-    print("b")
+def laod_last_project_button(): print("a")
+def load_default_project_button(): print("b")
+def load_a_project_button(): print("c")
+def make_new_project_button(): print("d")
+def manage_projects_button(): print("manage")
+def global_settings_button(): print("settings")
+def exit_application(): exit()
 
-def load_a_project_button():
-    """Opens the project list submenu"""
-    print("c")
-
-def make_new_project_button():
-    """Opens the project creation submenu"""
-    print("d")
-
-def manage_projects_button():
-    "List projects with option to select, rename, delete and change project config"
-    print("manage")
-
-def global_settings_button():
-    """List global settings with options to select and change its values"""
-    print("settings")
-
-def exit_application():
-    exit()
 def handle_and_exit(label, handler_func):
     handler_func()
     app.exit(result=label)
 
+buttons = [
+    [ Button("Load last", lambda: handle_and_exit("Load last", laod_last_project_button)),
+      Button("Load", lambda: handle_and_exit("Load", load_a_project_button)),
+      Button("Create new", lambda: handle_and_exit("Create new", make_new_project_button))],
+    [ Button("Manage", lambda: handle_and_exit("Manage", manage_projects_button)),
+      Button("Settings", lambda: handle_and_exit("Settings", global_settings_button)),
+      Button("Exit", lambda: handle_and_exit("Exit", exit_application))]
+]
+
+button_row = 0
+button_col = 0
+
 def main_menUI(config):
-    """Geneates the main menu elements"""
-    # Styled multi-part text
     text = FormattedText([
         ('', "Choose a command:\n\n"),
         ('', "- Load last: load the last opened project: "),
         ('class:highlight', f"{config.get('last_project')}\n"),
         ('', "- Load: choose an existing project to load\n"),
         ('', "- Create new: start a new project\n\n"),
-
         ('', "- Manage: manage existing projects\n"),
         ('', "- Settings: global preferences\n"),
         ('', "- Exit: close the program"),
     ])
 
-    # Dialog with vertical stacking
-    top_buttons = Box(
-        VSplit([
-            Button("Load last", lambda: handle_and_exit("Load last", laod_last_project_button)),
-            Button("Load", lambda: handle_and_exit("Load", load_a_project_button)),
-            Button("Create new", lambda: handle_and_exit("Create new", make_new_project_button)),
-        ], padding=3),
-        width=Dimension(preferred=60),
-        style="class:button-box"
-    )
+    # Manual dialog-style layout
+    layout = HSplit([
+        Window(height=1, char=" "),
+        Label(text=text),
+        Window(height=1, char=" "),
+        VSplit(buttons[0], padding=3, align="CENTER"),
+        Window(height=1, char=" "),
+        VSplit(buttons[1], padding=3, align="CENTER"),
+        Window(height=1, char=" "),
+    ], width=Dimension(preferred=80))
 
-    bottom_buttons = Box(
-        VSplit([
-            Button("Manage", lambda: handle_and_exit("Manage", manage_projects_button)),
-            Button("Settings", lambda: handle_and_exit("Settings", global_settings_button)),
-            Button("Exit", lambda: handle_and_exit("Exit", exit_application)),
-        ], padding=3),
-        width=Dimension(preferred=60),
-        style="class:button-box"
-    )
-
-    dialog = Dialog(
-        title="Main menu",
-        body=HSplit([
-            Label(text=text),
-            top_buttons,
-            bottom_buttons
-        ], padding=1),
-        width=Dimension(preferred=80),  # Set dialog width
-        with_background=True,
-    )
-    # Styles
     style = Style.from_dict({
         "highlight": "fg:#ffaf00 bold",
         "dialog": "bg:#1c1c1c fg:#ffffff",
     })
 
+    kb = KeyBindings()
+
+    @kb.add('left')
+    def izquierda(event):
+        global button_row, button_col
+        if button_col > 0:
+            button_col -= 1
+        enfocar_boton(event)
+
+    @kb.add('right')
+    def derecha(event):
+        global button_row, button_col
+        if button_col < len(buttons[button_row]) - 1:
+            button_col += 1
+        enfocar_boton(event)
+
+    @kb.add('up')
+    def arriba(event):
+        global button_row, button_col
+        if button_row > 0:
+            button_row -= 1
+            button_col = min(button_col, len(buttons[button_row]) - 1)
+        enfocar_boton(event)
+
+    @kb.add('down')
+    def abajo(event):
+        global button_row, button_col
+        if button_row < len(buttons) - 1:
+            button_row += 1
+            button_col = min(button_col, len(buttons[button_row]) - 1)
+        enfocar_boton(event)
+
+    def enfocar_boton(event):
+        btn = buttons[button_row][button_col]
+        event.app.layout.focus(btn)
+
     global app
     app = Application(
-        layout=Layout(dialog),
+        layout=Layout(layout),
         full_screen=True,
         style=style,
+        key_bindings=kb
     )
-
 
 def main():
     print(f"{bcolors.BOLD}Welcome to OSCPTFM 0.a1! (Name pending){bcolors.RESET}")
@@ -113,13 +125,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-def init_environment(config):
-    """Create main projects dir and default project if needed."""
-    projects_path = Path(config["projects_dir"])
-    projects_path.mkdir(exist_ok=True)
-    create_project(config["default_project"], config)
-
-# Lista de projects
-# Creacion de projects
-
