@@ -9,8 +9,9 @@ from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
 from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
+from core.climgr import mainarghelpmessage
 from core.config import load_global_config, save_global_config
-from project_manager.projects import create_project, project_folders
+from core.project_manager.projects import create_project, project_folders, checkpwdisproject
 from core.globalvars import bcolors
 
 def init_environment(config):
@@ -120,7 +121,7 @@ def guimain():
     print(f"Result = {result}")
 
 if __name__ == "__main__":
-    print(f"{bcolors.BOLD}Welcome to OSCPTFM 0.a1! (Name pending){bcolors.RESET}")
+    print(f"{bcolors.BOLD}Welcome to the Really Awesome Recon and Scan tool 0.a1! (Name pending){bcolors.RESET}")
     config = load_global_config()
     init_environment(config)
     save_global_config(config)
@@ -131,10 +132,10 @@ if __name__ == "__main__":
     else:
         print("Headless(TBA)")
         projectname = os.path.basename(os.getcwd())
-        for project in project_folders:
-            if not os.path.isdir(project):
-                print(f"\n{bcolors.FAIL}[-] Current folder is not a tool project. Aborting{bcolors.RESET}")
-                exit(1)
+        checkpwdisproject()
+        command = sys.argv[1]
+        args = sys.argv[2:]
+        mainarghelpmessage(sys.argv[1])
 
         #Testar que estamos en un projecto (checar context y nots y que el contenido no está mal formado de context)
         #Despues ya checar lo que se ha elegido y actuar en consecuencia

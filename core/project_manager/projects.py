@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from core.globalvars import bcolors
 
@@ -28,6 +29,11 @@ def create_project(name, config):
     else:
         print(f"{bcolors.FAIL}[+] Project '{name}' already exists.{bcolors.RESET}")
 
+def checkpwdisproject():
+    for project in project_folders:
+        if not os.path.isdir(project):
+            print(f"\n{bcolors.FAIL}[-] Current folder is not a to  ol project. Aborting{bcolors.RESET}")
+            exit(1)
 
 '''
 list_projects()
