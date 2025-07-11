@@ -9,7 +9,7 @@ from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
 from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
-from core.help_manager import mainarghelpmessage
+from core.commands_manager import mainarghelpmessage, command_map
 from core.config import load_global_config, save_global_config
 from core.project_manager.projects import create_project, project_folders, checkpwdisproject
 from core.config import bcolors
@@ -138,6 +138,8 @@ if __name__ == "__main__":
         command = sys.argv[1]
         args = sys.argv[2:]
         mainarghelpmessage(sys.argv[1])
+
+        command_map[command](args, config)
 
         #Testar que estamos en un projecto (checar context y nots y que el contenido no está mal formado de context)
         #Despues ya checar lo que se ha elegido y actuar en consecuencia

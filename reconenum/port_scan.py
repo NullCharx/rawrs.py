@@ -35,7 +35,7 @@ class nmapWrapper:
             nmap.PortScanner = nmap.PortScanner()
         except nmap.PortScannerError as e:
             print(e)
-            print("nmap wasn't found on regular paths! Most enum functions won't work unless you specify a path in the settings menu")
+            print("nmap wasn't found on regular paths! Most reconenum functions won't work unless you specify a path in the settings menu")
 
 
     def regularPortScanning(self):

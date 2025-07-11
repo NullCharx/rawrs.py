@@ -1,5 +1,8 @@
 # Manager for cli arguments (no TGUI)
 import sys
+
+from reconenum import reconenum
+
 general_help = '''
 Really Awesome Recon and Scan Tool (RAWRS)
 
@@ -12,24 +15,8 @@ Main subcommands:
   rawrs.py osint      -> Passive information gathering
 '''
 
-main_arguments =  {
-    "scan": '''
-    Scan subtool for ports, services, and protocols.
-
-    Discovery commands:
-      rawrs.py scan hdiscovery [IP range]   Discover up hosts in an IP range
-      rawrs.py scan pdiscovery [IP]         Discover open ports using various scans
-      rawrs.py scan sdiscovery [IP]         Identify services and known vulnerabilities
-      rawrs.py scan fdiscovery [IP range]   Full scan: hosts + ports + services
-
-    Protocol submenus:
-      rawrs.py scan smb                     SMB-specific enumeration
-      rawrs.py scan dns                     DNS analysis tools
-      rawrs.py scan ssh                     SSH version and key gathering
-      rawrs.py scan ftp                     FTP login/anon checks
-    ''',
-
-    "tunnel": '''
+a =  {
+      "tunnel": '''
     Tunneling subtool: Set up simple or advanced tunnels.
 
     Tunneling commands:
@@ -49,12 +36,15 @@ main_arguments =  {
     '''
 }
 def mainarghelpmessage(command=None):
-    if command is None or command not in main_arguments:
+    if command is None or command not in command_map:
         print(general_help)
         exit(2)
 
 
 
-def scanarguments(command=None):
-    if command is None or command not in main_arguments:
-        print(main_arguments.get(command))
+command_map = {
+    "enum": reconenum.run,
+    "tunnel": print("awa"),
+    "osint": print("awaawa"),
+    # optionally add "add-host", "exit", etc.
+}
