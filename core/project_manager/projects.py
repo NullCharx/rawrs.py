@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from core.globalvars import bcolors
+from core.config import bcolors
 
 """Load and save"""
 
@@ -31,9 +31,11 @@ def create_project(name, config):
 
 def checkpwdisproject():
     for project in project_folders:
-        if not os.path.isdir(project):
-            print(f"\n{bcolors.FAIL}[-] Current folder is not a to  ol project. Aborting{bcolors.RESET}")
-            exit(1)
+        current_dir = os.getcwd()
+        if not os.path.isdir(current_dir + "/" + project):
+            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
+            return False
+    return True
 
 '''
 list_projects()

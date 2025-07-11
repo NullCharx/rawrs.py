@@ -9,15 +9,16 @@ from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
 from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
-from core.climgr import mainarghelpmessage
+from core.help_manager import mainarghelpmessage
 from core.config import load_global_config, save_global_config
 from core.project_manager.projects import create_project, project_folders, checkpwdisproject
-from core.globalvars import bcolors
+from core.config import bcolors
 
 def init_environment(config):
     projects_path = Path(config["projects_dir"])
     projects_path.mkdir(exist_ok=True)
-    create_project(config["default_project"], config)
+    if not checkpwdisproject():
+        create_project(config["default_project"], config)
 
 def laod_last_project_button(): print("a")
 def load_default_project_button(): print("b")
@@ -132,7 +133,8 @@ if __name__ == "__main__":
     else:
         print("Headless(TBA)")
         projectname = os.path.basename(os.getcwd())
-        checkpwdisproject()
+        if not checkpwdisproject():
+            exit(1)
         command = sys.argv[1]
         args = sys.argv[2:]
         mainarghelpmessage(sys.argv[1])
