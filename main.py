@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 
 from prompt_toolkit.formatted_text import FormattedText
@@ -8,7 +10,7 @@ from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
 from core.config import load_global_config, save_global_config
-from project_manager.projects import create_project
+from project_manager.projects import create_project, project_folders
 from core.globalvars import bcolors
 
 def init_environment(config):
@@ -112,16 +114,27 @@ def main_menUI(config):
         key_bindings=kb
     )
 
-def main():
+def guimain():
+    main_menUI(config)
+    result = app.run()
+    print(f"Result = {result}")
+
+if __name__ == "__main__":
     print(f"{bcolors.BOLD}Welcome to OSCPTFM 0.a1! (Name pending){bcolors.RESET}")
     config = load_global_config()
     init_environment(config)
     save_global_config(config)
     print(f"\n{bcolors.OKCYAN}[+] Toolkit environment is ready.{bcolors.RESET}")
     print(f"______________________________________________________________________")
-    main_menUI(config)
-    result = app.run()
-    print(f"Result = {result}")
+    if len(sys.argv) == 1:
+        guimain()
+    else:
+        print("Headless(TBA)")
+        projectname = os.path.basename(os.getcwd())
+        for project in project_folders:
+            if not os.path.isdir(project):
+                print(f"\n{bcolors.FAIL}[-] Current folder is not a tool project. Aborting{bcolors.RESET}")
+                exit(1)
 
-if __name__ == "__main__":
-    main()
+        #Testar que estamos en un projecto (checar context y nots y que el contenido no está mal formado de context)
+        #Despues ya checar lo que se ha elegido y actuar en consecuencia

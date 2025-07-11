@@ -4,6 +4,7 @@ from core.globalvars import bcolors
 
 """Load and save"""
 
+project_folders = ["results", "scans","tunnels"]
 
 def create_project(name, config):
     """Create a project folder with default structure."""
@@ -11,8 +12,11 @@ def create_project(name, config):
     if not project_path.exists():
         print(f"{bcolors.WARNING}[+] Creating project: {name}{bcolors.RESET}")
         project_path.mkdir()
-        (project_path / "results").mkdir()
-        (project_path / "tunnels").mkdir()
+        for folder in project_folders:
+            (project_path / folder).mkdir()
+            if folder == "scans":
+                (project_path / folder / "raw").mkdir()
+
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
             "targets": [],
