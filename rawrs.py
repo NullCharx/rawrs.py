@@ -1,4 +1,6 @@
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -15,8 +17,29 @@ from core.project_manager.projects import create_project, project_folders, check
 from core.config import bcolors
 
 def init_environment(config):
+    print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
+    if not shutil.which("go"):
+        print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH. Please install go as its needed by some subtools.{bcolors.RESET}")
+    else:
+        try:
+            env = os.environ.copy()
+            env["CC"] = "/usr/bin/gcc"
+            result = subprocess.run(
+                ["go", "install", "github.com/vdjagilev/nmap-formatter/v3@latest"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=True
+            )
+            print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed:\n{result.stdout}{bcolors.RESET}")
+        except subprocess.CalledProcessError as e:
+            print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
+            print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
+            exit(1)
+        except FileNotFoundError:
+            print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH.{bcolors.RESET}")
+            exit(1)
     projects_path = Path(config["projects_dir"])
-    projects_path.mkdir(exist_ok=True)
     if not checkpwdisproject():
         create_project(config["default_project"], config)
 
