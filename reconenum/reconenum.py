@@ -1,3 +1,13 @@
+import os
+import re
+
+from reconenum.nmap import nmap
+
+nmapregex = re.compile(r"^(h|p|s|fs)discovery$")
+
+
+def full_discovery(subargs, config):
+    pass
 
 
 def run(args, config):
@@ -22,14 +32,20 @@ def run(args, config):
     subcommand = args[0]
     subargs = args[1:]
 
-    if subcommand == "hdiscovery":
-        host_discovery(subargs, config)
-    elif subcommand == "pdiscovery":
-        port_discovery(subargs, config)
-    elif subcommand == "sdiscovery":
-        service_discovery(subargs, config)
-    elif subcommand == "fdiscovery":
-        full_discovery(subargs, config)
+    json_result = {}
+    if nmapregex.match(subcommand):
+        if subcommand == "hdiscovery":
+            nmap.host_discovery(subargs)
+            if json_result:
+                for host in json_result.get("hosts", []):
+                    print(f"{host['address']} is up")
+        elif subcommand == "pdiscovery":
+            nmap.port_discovery(subargs)
+        elif subcommand == "sdiscovery":
+            nmap.service_discovery(subargs)
+        elif subcommand == "fdiscovery":
+            full_discovery(subargs)
+
 
     elif subcommand == "smb":
         smb_scan(subargs, config)
@@ -41,3 +57,7 @@ def run(args, config):
         ssh_scan(subargs, config)
     else:
         print(f"Unknown scan subcommand: {subcommand}")
+
+
+
+

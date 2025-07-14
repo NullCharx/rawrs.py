@@ -11,6 +11,7 @@ from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
 from prompt_toolkit.application import Application
 from prompt_toolkit.styles import Style
 
+from core import context_manager
 from core.commands_manager import mainarghelpmessage, command_map
 from core.config import load_global_config, save_global_config
 from core.project_manager.projects import create_project, project_folders, checkpwdisproject
@@ -39,7 +40,7 @@ def init_environment(config):
         except FileNotFoundError:
             print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH.{bcolors.RESET}")
             exit(1)
-    projects_path = Path(config["projects_dir"])
+    context_manager.projects_path = Path(config["projects_dir"])
     if not checkpwdisproject():
         create_project(config["default_project"], config)
 
@@ -154,10 +155,13 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         guimain()
     else:
-        print("Headless(TBA)")
+        print("Headless mode")
         projectname = os.path.basename(os.getcwd())
-        if not checkpwdisproject():
+        if checkpwdisproject():
+            context_manager.current_project = os.getcwd()
+        else:
             exit(1)
+
         command = sys.argv[1]
         args = sys.argv[2:]
         mainarghelpmessage(sys.argv[1])

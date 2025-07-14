@@ -10,10 +10,23 @@ A tool intended to automate repetitive recon and scanning tasks,
 especially focused on OSCP-style workflows.
 
 Main subcommands:
-  rawrs.py scan       -> Port and service scanning utilities
+  rawrs.py enum       -> Port and service scanning utilities
   rawrs.py tunnel     -> Tunneling and proxy setup
   rawrs.py osint      -> Passive information gathering
 '''
+
+def mainarghelpmessage(command=None):
+    if command is None or command not in command_map:
+        print(general_help)
+        exit(2)
+
+command_map = {
+    "enum": reconenum.run,
+    "tunnel": print("awa"),
+    "osint": print("awaawa"),
+    # optionally add "add-host", "exit", etc.
+}
+
 
 a =  {
       "tunnel": '''
@@ -34,17 +47,4 @@ a =  {
       rawrs.py osint email [EMAIL]         Check breaches, Gravatar, public profiles
       rawrs.py osint ip [IP]               Enrich IPs with threat feeds, open ports
     '''
-}
-def mainarghelpmessage(command=None):
-    if command is None or command not in command_map:
-        print(general_help)
-        exit(2)
-
-
-
-command_map = {
-    "enum": reconenum.run,
-    "tunnel": print("awa"),
-    "osint": print("awaawa"),
-    # optionally add "add-host", "exit", etc.
 }
