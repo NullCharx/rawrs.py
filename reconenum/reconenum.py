@@ -1,8 +1,9 @@
+import ipaddress
 import re
-from reconenum.nmap import outputformatter
+from reconenum.nmap import outputparser
 from reconenum.nmap import nmap
 
-nmapregex = re.compile(r"^(h|p|s|fs)discovery$")
+nmapregex = re.compile(r"fullscan")
 
 
 def full_discovery(subargs, config):
@@ -14,11 +15,7 @@ def run(args, config):
         print('''
     Scan subtool for ports, services, and protocols.
 
-    Discovery commands:
-      rawrs.py reconenum hdiscovery [IP range]   Discover up hosts in an IP range
-      rawrs.py reconenum pdiscovery [IP]         Discover open ports using various scans
-      rawrs.py reconenum sdiscovery [IP]         Identify services and known vulnerabilities
-      rawrs.py reconenum fdiscovery [IP range]   Full scan: hosts + ports + services
+      rawrs.py reconenum fullscan [IP range or list separated by commas]   Discover up hosts in an IP range; performs host discovery by various means, port detection and then service and common vulnd etection on open ports
 
     Protocol submenus:
       rawrs.py reconenum smb                     SMB-specific enumeration
@@ -31,16 +28,11 @@ def run(args, config):
     subcommand = args[0]
     subargs = args[1:]
 
-    if nmapregex.match(subcommand):
-        if subcommand == "hdiscovery":
-            json_result = nmap.host_discovery(subargs)
-            outputformatter.show_host_discovery_results(json_result)
-        elif subcommand == "pdiscovery":
-            nmap.port_discovery(subargs)
-        elif subcommand == "sdiscovery":
-            nmap.service_discovery(subargs)
-        elif subcommand == "fdiscovery":
-            full_discovery(subargs)
+    if subcommand == "fullscan":
+        print(subargs)
+        subargs[-1] = parse_input(subargs[-1])
+        print(subargs)
+        full_discovery(subargs, config)
 
 
     elif subcommand == "smb":
@@ -53,6 +45,34 @@ def run(args, config):
         ssh_scan(subargs, config)
     else:
         print(f"Unknown scan subcommand: {subcommand}")
+
+
+'''
+Parse CIDR notation IP list or single IP. If there is a list, CIDRS are ignored
+'''
+def parse_input(input_string):
+
+    if len(input_string) == 1:
+        parts = [p.strip() for p in input_string.split(',') if p.strip()]
+
+        # Case: First element is CIDR or single IP is provided
+        if len(parts) == 1 or '/' in parts[0]:
+            return parts[0]
+        # list of ips discarding any CIDR
+        else:
+            ips = []
+            for p in parts:
+                if '/' in p:
+                    continue
+                try:
+                    ip = ipaddress.ip_address(p)
+                    ips.append(str(ip))
+                except ValueError as e:
+                    raise ValueError(f"Invalid IP address '{p}': {e}")
+            return ips
+    else:
+        for char in input_string:
+            char = char.replace(',','')
 
 
 

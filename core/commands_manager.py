@@ -15,10 +15,12 @@ Main subcommands:
   rawrs.py osint      -> Passive information gathering
 '''
 
+
 def mainarghelpmessage(command=None):
     if command is None or command not in command_map:
         print(general_help)
         exit(2)
+
 
 command_map = {
     "enum": reconenum.run,
@@ -27,9 +29,8 @@ command_map = {
     # optionally add "add-host", "exit", etc.
 }
 
-
-a =  {
-      "tunnel": '''
+a = {
+    "tunnel": '''
     Tunneling subtool: Set up simple or advanced tunnels.
 
     Tunneling commands:

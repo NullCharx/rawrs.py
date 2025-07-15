@@ -18,10 +18,14 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
     try:
         print(f"[+] Running Nmap: {' '.join(['nmap'] + nmap_args + ['-oX', xml_path])}")
         subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False, check=True)
+        target= nmap_args[-1].replace("/","-",1)
 
         # Define JSON output path
-        json_output_path = f"./scans/{output_prefix}_{scandate}.json"
-
+        json_output_path = f"./scans/{output_prefix}_{target}.json"
+        try:
+            os.remove(json_output_path)
+        except OSError:
+            pass
         # Run nmap-formatter to convert XML to JSON
         result = subprocess.run(
             [f"{gopath}/bin/nmap-formatter", "json", xml_path, "-f", json_output_path],
@@ -47,18 +51,13 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
             os.remove(xml_path)
 
 
-async def run_nmap_async(target):
-    proc = await asyncio.create_subprocess_exec(
-        "", "-sn", target, f"-oX ./{target}scan",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    #Run  nmap-formatter json ./{target}scan
-    #then mv to
-    stdout, stderr = await proc.communicate()
-    return stdout.decode(), stderr.decode()
 
 #Make host run both sylent and unsilent scans and aggregate them
-def host_discovery(ip_range): return run_nmap_scan(["-sn"] + ip_range,"host_discovery")
-def port_discovery(ip): return run_nmap_scan(["-sS", "-Pn", "-p-"] + ip, "port discovery")
-def service_discovery(ip): return run_nmap_scan(["-sVC"] + ip, "service_discovery")
+def full_discovery(ip_range):
+
+    # Firstly for all IPs (single list or CIDR) we:
+    #Make a regular scan first, then get the relevant (host up) results
+    #Make other scans, like syn scans, then get relevant results and compare to see if theres any host actively up but ignoring probes
+
+    #Then, for all up Ips, we scan ports with servivce and vulnerability scans -sVC. For the gosts that ignore probes we must add the argument that does not ping before scanning.
+    print("awa")
