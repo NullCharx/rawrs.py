@@ -1,6 +1,5 @@
-import os
 import re
-
+from reconenum.nmap import outputformatter
 from reconenum.nmap import nmap
 
 nmapregex = re.compile(r"^(h|p|s|fs)discovery$")
@@ -32,13 +31,10 @@ def run(args, config):
     subcommand = args[0]
     subargs = args[1:]
 
-    json_result = {}
     if nmapregex.match(subcommand):
         if subcommand == "hdiscovery":
-            nmap.host_discovery(subargs)
-            if json_result:
-                for host in json_result.get("hosts", []):
-                    print(f"{host['address']} is up")
+            json_result = nmap.host_discovery(subargs)
+            outputformatter.show_host_discovery_results(json_result)
         elif subcommand == "pdiscovery":
             nmap.port_discovery(subargs)
         elif subcommand == "sdiscovery":
