@@ -3,7 +3,6 @@ import datetime
 import json
 import os
 import subprocess
-
 from core import context_manager
 
 
@@ -59,6 +58,7 @@ async def run_nmap_async(target):
     stdout, stderr = await proc.communicate()
     return stdout.decode(), stderr.decode()
 
+#Make host run both sylent and unsilent scans and aggregate them
 def host_discovery(ip_range): return run_nmap_scan(["-sn"] + ip_range,"host_discovery")
-def port_discovery(ip): return run_nmap_scan(["-sS", "-Pn", "-p-"] + ip)
-def service_discovery(ip): return run_nmap_scan(["-sV", "-sC"] + ip)
+def port_discovery(ip): return run_nmap_scan(["-sS", "-Pn", "-p-"] + ip, "port discovery")
+def service_discovery(ip): return run_nmap_scan(["-sVC"] + ip, "service_discovery")
