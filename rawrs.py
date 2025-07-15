@@ -167,6 +167,3 @@ if __name__ == "__main__":
         mainarghelpmessage(sys.argv[1])
 
         command_map[command](args, config)
-
-        #Testar que estamos en un projecto (checar context y nots y que el contenido no está mal formado de context)
-        #Despues ya checar lo que se ha elegido y actuar en consecuencia

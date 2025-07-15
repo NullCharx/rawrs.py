@@ -53,11 +53,54 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 
 
 #Make host run both sylent and unsilent scans and aggregate them
-def full_discovery(ip_range):
+def full_discovery(ip_range, config):
 
     # Firstly for all IPs (single list or CIDR) we:
     #Make a regular scan first, then get the relevant (host up) results
     #Make other scans, like syn scans, then get relevant results and compare to see if theres any host actively up but ignoring probes
 
     #Then, for all up Ips, we scan ports with servivce and vulnerability scans -sVC. For the gosts that ignore probes we must add the argument that does not ping before scanning.
-    print("awa")
+    print(f"[+] Starting full discovery on {ip_range}...\n")
+
+    # STEP 1 – Basic Host Discovery (ping scan)
+    print("[*] Running basic host discovery (ping scan)...")
+    ip_range.insert(0,f"-sn")
+    basic_result = run_nmap_scan(ip_range, "host_discovery")
+    del ip_range[0]
+    print(ip_range)
+    #Different parsers on outputparsers for diffo things
+    for host in parse_nmap_output(basic_result):
+        if host["status"] == "up":
+            up_hosts_ping.add(host["ip"])
+
+    print(f"[+] Ping scan found {len(up_hosts_ping)} hosts up.\n")
+
+    # STEP 2 – Additional discovery with -Pn or -PS/PA for stealthy or filtered hosts
+    print("[*] Running additional discovery scan (-Pn)...")
+    stealth_args = f"-Pn -sn"
+    stealth_result = run_nmap_scan(ip_range, stealth_args, "stealth_discovery")
+
+    up_hosts_stealth = set()
+    for host in parse_nmap_output(stealth_result):
+        if host["status"] == "up":
+            up_hosts_stealth.add(host["ip"])
+
+    print(f"[+] Stealth scan found {len(up_hosts_stealth)} hosts up.\n")
+
+    # STEP 3 – Union de resultados
+    all_up_hosts = sorted(up_hosts_ping.union(up_hosts_stealth))
+    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
+
+    # STEP 4 – Port scan with service detection (-sVC)
+    print("[*] Running service & vulnerability scan (-sVC)...")
+    for ip in all_up_hosts:
+        print(f"    ↳ Scanning {ip}...")
+        # If host did NOT respond to ping, use -Pn
+        if ip not in up_hosts_ping:
+            svc_args = "-Pn -sVC"
+        else:
+            svc_args = "-sVC"
+
+        run_nmap_scan(ip, svc_args, f"svc_scan_{ip.replace('/', '_')}")
+
+    print("\n[✔] Full discovery completed.\n")

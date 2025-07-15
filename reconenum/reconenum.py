@@ -2,12 +2,11 @@ import ipaddress
 import re
 from reconenum.nmap import outputparser
 from reconenum.nmap import nmap
+from reconenum.nmap.nmap import full_discovery
 
 nmapregex = re.compile(r"fullscan")
 
 
-def full_discovery(subargs, config):
-    pass
 
 
 def run(args, config):
@@ -29,9 +28,7 @@ def run(args, config):
     subargs = args[1:]
 
     if subcommand == "fullscan":
-        print(subargs)
         subargs = parse_input(subargs)
-        print(subargs)
         full_discovery(subargs, config)
 
 

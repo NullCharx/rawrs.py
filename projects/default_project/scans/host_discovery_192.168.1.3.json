@@ -1,0 +1,89 @@
+{
+  "Scanner": "nmap",
+  "Args": "nmap -sn -oX /home/prrtchr/PycharmProjects/OSCPTFM/projects/default_project/scans/raw/host_discovery-20250716_010834.xml 192.168.1.0 192.168.1.1 192.168.1.3",
+  "Start": 1752620914,
+  "StartStr": "Wed Jul 16 01:08:34 2025",
+  "Version": "7.94SVN",
+  "ScanInfo": {
+    "Type": "",
+    "Protocol": "",
+    "NumServices": 0,
+    "Services": ""
+  },
+  "Host": [
+    {
+      "StartTime": 0,
+      "EndTime": 0,
+      "Port": null,
+      "HostAddress": [
+        {
+          "Address": "192.168.1.1",
+          "AddressType": "ipv4",
+          "Vendor": ""
+        }
+      ],
+      "HostNames": {
+        "HostName": [
+          {
+            "Name": "192.168.1.1",
+            "Type": "PTR"
+          }
+        ]
+      },
+      "Status": {
+        "State": "up",
+        "Reason": "syn-ack"
+      },
+      "OS": {
+        "OSPortUsed": null,
+        "OSClass": null,
+        "OSMatch": null
+      },
+      "Trace": {
+        "Port": 0,
+        "Protocol": "",
+        "Hops": null
+      },
+      "Uptime": {
+        "Seconds": 0,
+        "LastBoot": ""
+      },
+      "Distance": {
+        "Value": 0
+      },
+      "TCPSequence": {
+        "Index": "",
+        "Difficulty": "",
+        "Values": ""
+      },
+      "IPIDSequence": {
+        "Class": "",
+        "Values": ""
+      },
+      "TCPTSSequence": {
+        "Class": "",
+        "Values": ""
+      }
+    }
+  ],
+  "Verbose": {
+    "Level": 0
+  },
+  "Debugging": {
+    "Level": 0
+  },
+  "RunStats": {
+    "Finished": {
+      "Time": 1752620915,
+      "TimeStr": "Wed Jul 16 01:08:35 2025",
+      "Elapsed": 1.21,
+      "Summary": "Nmap done at Wed Jul 16 01:08:35 2025; 3 IP addresses (1 host up) scanned in 1.21 seconds",
+      "Exit": "success"
+    },
+    "Hosts": {
+      "Up": 1,
+      "Down": 2,
+      "Total": 3
+    }
+  }
+}
