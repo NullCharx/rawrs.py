@@ -30,7 +30,7 @@ def run(args, config):
 
     if subcommand == "fullscan":
         print(subargs)
-        subargs[-1] = parse_input(subargs[-1])
+        subargs = parse_input(subargs)
         print(subargs)
         full_discovery(subargs, config)
 
@@ -53,7 +53,7 @@ Parse CIDR notation IP list or single IP. If there is a list, CIDRS are ignored
 def parse_input(input_string):
 
     if len(input_string) == 1:
-        parts = [p.strip() for p in input_string.split(',') if p.strip()]
+        parts = [p.strip() for p in input_string[0].split(',') if p.strip()]
 
         # Case: First element is CIDR or single IP is provided
         if len(parts) == 1 or '/' in parts[0]:
@@ -71,8 +71,10 @@ def parse_input(input_string):
                     raise ValueError(f"Invalid IP address '{p}': {e}")
             return ips
     else:
-        for char in input_string:
-            char = char.replace(',','')
+        ips = []
+        for string in input_string:
+            ips.append(string.replace(',', ''))
+        return ips
 
 
 
