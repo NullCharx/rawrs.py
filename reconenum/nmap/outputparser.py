@@ -14,3 +14,13 @@ def show_host_discovery_results(data: dict):
         vendor = addr_info.get("Vendor", "") if addr_info else ""
 
         print(f"  - {addr_info['Address']:<15} ({hostname})  →  {status.upper()} (reason: {reason}){' [' + vendor + ']' if vendor else ''}")
+
+def parse_hostnames(nmap_json: dict) -> dict[str, list[str]]:
+    """Return a dict of IP -> list of hostnames."""
+    result = {}
+    for host in nmap_json.get("Host", []):
+        ip = host.get("HostAddress", [{}])[0].get("Address")
+        names = [hn.get("Name") for hn in host.get("HostNames", {}).get("HostName", [])]
+        if ip and names:
+            result[ip] = names
+    return result

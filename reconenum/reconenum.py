@@ -28,7 +28,9 @@ def run(args, config):
     subargs = args[1:]
 
     if subcommand == "fullscan":
+        print(subargs)
         subargs = parse_input(subargs)
+        print(subargs)
         full_discovery(subargs, config)
 
 
@@ -47,31 +49,39 @@ def run(args, config):
 '''
 Parse CIDR notation IP list or single IP. If there is a list, CIDRS are ignored
 '''
+import ipaddress
+
 def parse_input(input_string):
+    """
+    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
+    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
+    CIDRs are expanded into all contained IPs.
+    """
+    if isinstance(input_string, str):
+        input_string = [input_string]
 
-    if len(input_string) == 1:
-        parts = [p.strip() for p in input_string[0].split(',') if p.strip()]
+    ips = []
 
-        # Case: First element is CIDR or single IP is provided
-        if len(parts) == 1 or '/' in parts[0]:
-            return parts[0]
-        # list of ips discarding any CIDR
-        else:
-            ips = []
-            for p in parts:
-                if '/' in p:
-                    continue
+    for entry in input_string:
+        # Split by comma in case of comma-separated entries
+        parts = [p.strip() for p in entry.split(',') if p.strip()]
+        for part in parts:
+            #Try to expand CIDR into ip list
+            if '/' in part:
                 try:
-                    ip = ipaddress.ip_address(p)
+                    # Expand CIDR into IPs
+                    net = ipaddress.ip_network(part, strict=False)
+                    ips.extend([str(ip) for ip in net.hosts()])
+                except ValueError as e:
+                    raise ValueError(f"Invalid CIDR '{part}': {e}")
+            else:
+                #Get the parsed list and try to parse it before adding
+                try:
+                    ip = ipaddress.ip_address(part)
                     ips.append(str(ip))
                 except ValueError as e:
-                    raise ValueError(f"Invalid IP address '{p}': {e}")
-            return ips
-    else:
-        ips = []
-        for string in input_string:
-            ips.append(string.replace(',', ''))
-        return ips
+                    raise ValueError(f"Invalid IP address '{part}': {e}")
+    return ips
 
 
 

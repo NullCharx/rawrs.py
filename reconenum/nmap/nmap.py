@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 from core import context_manager
+from reconenum.nmap.outputparser import parse_hostnames
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -64,12 +65,16 @@ def full_discovery(ip_range, config):
 
     # STEP 1 – Basic Host Discovery (ping scan)
     print("[*] Running basic host discovery (ping scan)...")
-    ip_range.insert(0,f"-sn")
+    if type(ip_range) == list:
+        ip_range.insert(0,f"-sn")
+    else:
+        ip_range = f"-sn {ip_range}"
     basic_result = run_nmap_scan(ip_range, "host_discovery")
     del ip_range[0]
     print(ip_range)
+    up_hosts_ping=[]
     #Different parsers on outputparsers for diffo things
-    for host in parse_nmap_output(basic_result):
+    for host in parse_hostnames(basic_result):
         if host["status"] == "up":
             up_hosts_ping.add(host["ip"])
 
