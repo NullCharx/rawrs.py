@@ -28,7 +28,6 @@ def run(args, config):
     subargs = args[1:]
 
     if subcommand == "fullscan":
-        print(subargs)
         subargs = parse_input(subargs)
         print(subargs)
         full_discovery(subargs, config)
@@ -66,14 +65,9 @@ def parse_input(input_string):
         # Split by comma in case of comma-separated entries
         parts = [p.strip() for p in entry.split(',') if p.strip()]
         for part in parts:
-            #Try to expand CIDR into ip list
+            #Return the CIDR
             if '/' in part:
-                try:
-                    # Expand CIDR into IPs
-                    net = ipaddress.ip_network(part, strict=False)
-                    ips.extend([str(ip) for ip in net.hosts()])
-                except ValueError as e:
-                    raise ValueError(f"Invalid CIDR '{part}': {e}")
+                return [part]
             else:
                 #Get the parsed list and try to parse it before adding
                 try:
