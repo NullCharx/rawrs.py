@@ -14,6 +14,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
     YELLOW = '\033[33m'
+    GRAY = '\033[38;5;235m'
 
 
 GLOBAL_CONFIG_PATH = Path("config.json")

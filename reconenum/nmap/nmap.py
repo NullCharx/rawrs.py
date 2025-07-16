@@ -4,7 +4,8 @@ import json
 import os
 import subprocess
 from core import context_manager
-from reconenum.nmap.outputparser import parse_host_discovery
+from core.config import bcolors
+from reconenum.nmap.outputparser import parse_host_discovery, parse_full_discovery
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -17,7 +18,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 
     # Run nmap and save the output to the XML file
     try:
-        print(f"[+] Running Nmap: {' '.join(['nmap'] + nmap_args + ['-oX', xml_path])}")
+        print(f"[+] Running Nmap: {' '.join(['nmap'] + nmap_args + ['-oX', xml_path])}{bcolors.GRAY}")
         subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False, check=True)
         target= nmap_args[-1].replace("/","-",1)
 
@@ -35,7 +36,6 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
             check=True
         )
 
-        print(f"[+] Nmap scan successful. JSON output saved to: {json_output_path}")
 
         # Load JSON data
         with open(json_output_path, 'r') as file:
@@ -44,7 +44,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
         return json_data
 
     except subprocess.CalledProcessError as e:
-        print(f"[!] Error during scan or formatting: {e.stderr}")
+        print(f"{bcolors.FAIL}[!] Error during scan or formatting: {e.stderr}{bcolors.RESET}")
         return None
     finally:
         # Optional: Clean up the temporary XML file if you don't need it anymore
@@ -61,53 +61,35 @@ def full_discovery(ip_range, config):
     #Make other scans, like syn scans, then get relevant results and compare to see if theres any host actively up but ignoring probes
 
     #Then, for all up Ips, we scan ports with servivce and vulnerability scans -sVC. For the gosts that ignore probes we must add the argument that does not ping before scanning.
-    print(f"[+] Starting full discovery on {ip_range}...\n")
+    print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
 
     # STEP 1 – Basic Host Discovery (ping scan)
-    print("[*] Running basic host discovery (ping scan)...")
-    args = []
-    args.append("-sn")
+    args = ["-sn"]
     args += ip_range
-    print(args)
-    basic_result = run_nmap_scan(args, "host_discovery")
-    del ip_range[0]
-    print(ip_range)
-    up_hosts_ping=[]
-    #Different parsers on outputparsers for diffo things
-    uwu = parse_host_discovery(basic_result)
-    print(uwu)
-    for host in uwu:
-        if host["status"] == "up":
-            up_hosts_ping.add(host["ip"])
-
-    print(f"[+] Ping scan found {len(up_hosts_ping)} hosts up.\n")
+    host_discovery_results = run_nmap_scan(args, "host_discovery")
+    host_discovery_results = parse_host_discovery(host_discovery_results, "host_discovery")
+    print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
+    print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
 
     # STEP 2 – Additional discovery with -Pn or -PS/PA for stealthy or filtered hosts
-    print("[*] Running additional discovery scan (-Pn)...")
-    stealth_args = f"-Pn -sn"
-    stealth_result = run_nmap_scan(ip_range, stealth_args, "stealth_discovery")
-
-    up_hosts_stealth = set()
-    for host in parse_nmap_output(stealth_result):
-        if host["status"] == "up":
-            up_hosts_stealth.add(host["ip"])
-
-    print(f"[+] Stealth scan found {len(up_hosts_stealth)} hosts up.\n")
+    args[0] = f"-sS"
+    stealth_discovery_result = run_nmap_scan(args, "stealth_discovery")
+    stealth_discovery_result = parse_host_discovery(stealth_discovery_result, "stealth_discovery")
+    print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
+    print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
 
     # STEP 3 – Union de resultados
-    all_up_hosts = sorted(up_hosts_ping.union(up_hosts_stealth))
+    all_up_hosts = host_discovery_results.copy()
+    for k, v in stealth_discovery_result.items():
+        if k not in all_up_hosts:
+            all_up_hosts[k] = v
     print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
     # STEP 4 – Port scan with service detection (-sVC)
-    print("[*] Running service & vulnerability scan (-sVC)...")
-    for ip in all_up_hosts:
-        print(f"    ↳ Scanning {ip}...")
-        # If host did NOT respond to ping, use -Pn
-        if ip not in up_hosts_ping:
-            svc_args = "-Pn -sVC"
-        else:
-            svc_args = "-sVC"
-
-        run_nmap_scan(ip, svc_args, f"svc_scan_{ip.replace('/', '_')}")
+    targets = list(all_up_hosts.keys())
+    args = [f"-sVC"]
+    args += targets
+    full_scan = run_nmap_scan(args, "stealth_discovery")
+    full_scan = parse_full_discovery(full_scan, "stealth_discovery")
 
     print("\n[✔] Full discovery completed.\n")

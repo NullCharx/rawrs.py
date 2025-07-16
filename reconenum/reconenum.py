@@ -4,11 +4,6 @@ from reconenum.nmap import outputparser
 from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
 
-nmapregex = re.compile(r"fullscan")
-
-
-
-
 def run(args, config):
     if not args:
         print('''
@@ -29,7 +24,6 @@ def run(args, config):
 
     if subcommand == "fullscan":
         subargs = parse_input(subargs)
-        print(subargs)
         full_discovery(subargs, config)
 
 
@@ -45,9 +39,7 @@ def run(args, config):
         print(f"Unknown scan subcommand: {subcommand}")
 
 
-'''
-Parse CIDR notation IP list or single IP. If there is a list, CIDRS are ignored
-'''
+
 import ipaddress
 
 def parse_input(input_string):

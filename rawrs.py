@@ -147,6 +147,9 @@ def guimain():
 
 if __name__ == "__main__":
     print(f"{bcolors.BOLD}Welcome to the Really Awesome Recon and Scan tool 0.a1! (Name pending){bcolors.RESET}")
+    if os.getuid() != 0:
+        print(f"{bcolors.FAIL}Due to the nature of some commands (like nmap stealth scan) this script needs to be ran as sudo{bcolors.RESET}")
+        exit(10)
     config = load_global_config()
     init_environment(config)
     save_global_config(config)
