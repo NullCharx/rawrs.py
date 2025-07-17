@@ -13,7 +13,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
     scandate = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # Define the XML output path
-    xml_path = f"{context_manager.current_project}/scans/raw/{output_prefix}-{scandate}.xml"
+    xml_path = f"{context_manager.current_project}/scans/raw/xml/{output_prefix}-{scandate}.xml"
     gopath = subprocess.run(["go", "env", "GOPATH"], capture_output=True, text=True).stdout.strip()
 
     # Run nmap and save the output to the XML file
@@ -22,7 +22,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
         subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False, check=True)
         target= ''.join(nmap_args[1:]).replace("/","-",1)
         # Define JSON output path
-        json_output_path =  f"./scans/{output_prefix}_{target}.json"
+        json_output_path =  f"./scans/raw/json/{output_prefix}_{target}.json"
         try:
             os.remove(json_output_path)
         except OSError:
@@ -47,7 +47,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
         return None
     finally:
         # Optional: Clean up the temporary XML file if you don't need it anymore
-        if os.path.exists(xml_path):
+        if os.path.exists(xml_path) and not output_prefix == "full_scan":
             os.remove(xml_path)
 
 

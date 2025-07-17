@@ -17,6 +17,8 @@ def create_project(name, config):
             (project_path / folder).mkdir()
             if folder == "scans":
                 (project_path / folder / "raw").mkdir()
+                (project_path / folder / "raw"/"xml").mkdir()
+                (project_path / folder / "raw"/"json").mkdir()
 
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
