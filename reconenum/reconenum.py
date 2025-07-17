@@ -1,6 +1,6 @@
 import ipaddress
 import re
-from reconenum.nmap import outputparser
+from reconenum.nmap import parser
 from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
 

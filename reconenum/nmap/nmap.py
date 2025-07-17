@@ -5,7 +5,7 @@ import os
 import subprocess
 from core import context_manager
 from core.config import bcolors
-from reconenum.nmap.outputparser import parse_host_discovery, parse_full_discovery
+from reconenum.nmap.parser import parse_host_discovery, parse_full_discovery
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -20,10 +20,9 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
     try:
         print(f"[+] Running Nmap: {' '.join(['nmap'] + nmap_args + ['-oX', xml_path])}{bcolors.GRAY}")
         subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False, check=True)
-        target= nmap_args[-1].replace("/","-",1)
-
+        target= ''.join(nmap_args[1:]).replace("/","-",1)
         # Define JSON output path
-        json_output_path = f"./scans/{output_prefix}_{target}.json"
+        json_output_path =  f"./scans/{output_prefix}_{target}.json"
         try:
             os.remove(json_output_path)
         except OSError:
@@ -86,10 +85,11 @@ def full_discovery(ip_range, config):
     print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
     # STEP 4 – Port scan with service detection (-sVC)
+
     targets = list(all_up_hosts.keys())
-    args = [f"-sVC"]
+    args = ["-sVC","-Pn"]
     args += targets
-    full_scan = run_nmap_scan(args, "stealth_discovery")
-    full_scan = parse_full_discovery(full_scan, "stealth_discovery")
+    full_scan = run_nmap_scan(args, "full_scan")
+    full_scan = parse_full_discovery(full_scan, "full_scan",ip_range)
 
     print("\n[✔] Full discovery completed.\n")
