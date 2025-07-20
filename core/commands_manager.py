@@ -13,7 +13,8 @@ Main subcommands:
   rawrs.py --gui      -> Launch the Terminal GUI mode (experimental)
 
   rawrs.py enum       -> Port and service scanning utilities
-  rawrs.py tunnel     -> Tunneling and proxy setup
+  rawrs.py tunnel     -> Tunneling pivoting and proxy setup
+  rawrs.py transfer   -> Transfer tools between host and victim
   rawrs.py osint      -> Passive information gathering
 '''
 

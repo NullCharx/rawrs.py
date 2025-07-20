@@ -15,7 +15,7 @@ def run(args, config):
       -o                                        Overwrite previous existing targets
 
     Protocol submenus:
-      rawrs.py reconenum smb                     SMB-specific enumeration
+      rawrs.py reconenum web                     web fingerprinting
       rawrs.py reconenum smb                     SMB-specific enumeration
       rawrs.py reconenum dns                     DNS analysis tools
       rawrs.py reconenum ssh                     SSH version and key gathering
