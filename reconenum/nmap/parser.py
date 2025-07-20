@@ -50,98 +50,104 @@ def parse_host_discovery(json_data,scantype):
 
     return result
 
-def parse_full_discovery(json_data,scantype,ip_range):
+def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.json"):
     """
-       Parses full -sVC discovery JSON output into a structured dict and saves it to disk.
+    Parses Nmap formatted JSON data (from a -sVC scan) and returns a cleaned dict.
+    Also writes to a JSON file with simplified structure.
 
-       Output format:
-       {
-           "ip:192.168.1.1": {
-               "ports": [
-                   {
-                       "port": 80,
-                       "protocol": "tcp",
-                       "state": "open",
-                       "service": {
-                           "name": "http",
-                           "product": "Apache",
-                           ...
-                       },
-                       "scripts": [
-                           {"id": "http-title", "output": "Apache2 Ubuntu"},
-                           ...
-                       ]
-                   }
-               ]
-           }
-       }
-       """
+    Output format:
+    {
+        "ip:192.168.1.1": {
+            "hostname": "host.local",
+            "ports": [
+                {
+                    "port": "80",
+                    "protocol": "tcp",
+                    "state": "open",
+                    "reason": "syn-ack",
+                    "service": {
+                        "name": "http",
+                        "product": "Apache httpd",
+                        "version": "2.4.41",
+                        "extrainfo": "Ubuntu",
+                        ...
+                    },
+                    "scripts": [
+                        {"id": "vuln", "output": "..."}
+                    ]
+                },
+                ...
+            ]
+        },
+        ...
+    }
+    """
+    result = {}
 
-    results = {}
-    hosts = json_data.get("Host", [])
-    if hosts:
-        for host in hosts:
-            ip = None
-            for addr in host.get("HostAddress", []):
-                if addr.get("AddressType") == "ipv4":
-                    ip = addr.get("Address")
-                    break
+    for host in json_data.get("Host", []):
+        ip = None
+        hostname = None
 
-            if not ip:
-                continue
+        # Get IP address
+        for addr in host.get("HostAddress", []):
+            if addr.get("AddressType") == "ipv4":
+                ip = addr.get("Address")
+                break
 
-            key = f"ip:{ip}"
-            results[key] = {
-                "ports": []
-            }
-            port = host.get("Port", {})
-            if port:
-                for port in host.get("Port", []):
-                    port_info = {
-                        "port": port.get("PortId"),
-                        "protocol": port.get("Protocol"),
-                        "state": port.get("State", {}).get("State"),
-                        "service": {},
-                        "scripts": []
+        if not ip:
+            continue
+
+        # Get hostname (PTR or otherwise)
+        for hn in host.get("HostNames", {}).get("HostName", []):
+            if hn.get("Name") != ip:
+                hostname = hn.get("Name")
+                break
+
+        key = f"ip:{ip}"
+        result[key] = {
+            "hostname": hostname,
+            "ports": []
+        }
+
+        ports = host.get("Port", [])
+        if ports:
+            for port in ports :
+                port_info = {
+                    "port": port.get("PortId"),
+                    "protocol": port.get("Protocol"),
+                    "state": port.get("State", {}).get("State"),
+                    "reason": port.get("State", {}).get("Reason"),
+                    "service": {},
+                    "scripts": []
+                }
+
+                service = port.get("Service",[])
+                if service:
+                    port_info["service"] = {
+                        "name": service.get("Name"),
+                        "product": service.get("Product"),
+                        "version": service.get("Version"),
+                        "ostype": service.get("OSType"),
+                        "extrainfo": service.get("Extrainfo"),
+                        "tunnel": service.get("Tunnel"),
+                        "method": service.get("Method"),
+                        "conf": service.get("Conf"),
+                        "cpe": service.get("CPE")
                     }
 
-                    service = port.get("Service", {})
-                    if service:
-                        port_info["service"] = {
-                            "name": service.get("Name"),
-                            "product": service.get("Product"),
-                            "version": service.get("Version"),
-                            "ostype": service.get("OSType"),
-                            "extrainfo": service.get("Extrainfo"),
-                            "tunnel": service.get("Tunnel"),
-                            "method": service.get("Method"),
-                            "conf": service.get("Conf"),
-                            "cpe": service.get("CPE")
-                        }
-                    scripts = port.get("Scripts", [])
+                    scripts = port.get("Script", [])
                     if scripts:
                         for script in scripts:
-
                             port_info["scripts"].append({
                                 "id": script.get("Id"),
                                 "output": script.get("Output")
                             })
 
-                    results[key]["ports"].append(port_info)
+                result[key]["ports"].append(port_info)
 
-    # Clean up previous discovery outputs
-    #TOMORROW(TODAY): Make folders for each scan (common value)
-    directory = Path('./scans/raw/json')
-    for file_path in directory.iterdir():
-        if file_path.is_file() and (
-                re.match(r'host_discovery.*', file_path.name) or
-                re.match(r'stealth_discovery.*', file_path.name) or
-                re.match(r'full_discovery*', file_path.name)
-        ):
-            file_path.unlink()
+    # Save the cleaned results
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(result, f, indent=4)
 
-    # Save parsed results
-    with open(f"./scans/final_scan_aggregated{datetime.now().strftime('%Y%m%d_%H%M%S')}.json", "w") as f:
-        json.dump(results, f, indent=4)
-
-    return results
+    return result

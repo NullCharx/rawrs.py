@@ -58,30 +58,25 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 #Make host run both sylent and unsilent scans and aggregate them
 def full_discovery(ip_range : list, isOverwrite : bool, config):
 
-    # Firstly for all IPs (single list or CIDR) we:
-    #Make a regular scan first, then get the relevant (host up) results
-    #Make other scans, like syn scans, then get relevant results and compare to see if theres any host actively up but ignoring probes
-
-    #Then, for all up Ips, we scan ports with servivce and vulnerability scans -sVC. For the gosts that ignore probes we must add the argument that does not ping before scanning.
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
 
     # STEP 1 – Basic Host Discovery (ping scan)
     args = ["-sn"]
     args += ip_range
     host_discovery_results = run_nmap_scan(args, "host_discovery")
-    if not host_discovery_results.get("Host", []) is None:
+    if host_discovery_results.get("Host", []):
         host_discovery_results = parse_host_discovery(host_discovery_results, "host_discovery")
         print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
         print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
 
-    # STEP 2 – Additional discovery with -Pn or -PS/PA for stealthy or filtered hosts
+    # STEP 2 – Additional discovery for stealthy or filtered hosts
     args[0] = f"-sS"
     stealth_discovery_result = run_nmap_scan(args, "stealth_discovery")
-    if not stealth_discovery_result.get("Host", []) is None:
+    if stealth_discovery_result.get("Host", []):
         stealth_discovery_result = parse_host_discovery(stealth_discovery_result, "stealth_discovery")
         print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
         print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
-    elif host_discovery_results.get("Host", []) is None and stealth_discovery_result.get("Host", []) is None:
+    elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
         print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
         print(f"---------------------------------{bcolors.RESET}\n")
         exit(3)
@@ -100,6 +95,6 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
     args = ["-sVC","-Pn"]
     args += targets
     full_scan = run_nmap_scan(args, "full_scan")
-    full_scan = parse_full_discovery(full_scan, "full_scan",ip_range)
+    full_scan = parse_full_discovery(full_scan)
 
     print(f"\n{bcolors.RESET}[✔] Full discovery completed.{bcolors.RESET}\n\n")
