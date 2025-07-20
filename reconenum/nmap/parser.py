@@ -41,16 +41,16 @@ def parse_host_discovery(json_data,scantype):
             "state": state,
             "reason": reason
         }
-    directory = Path('./scans/raw/json')
+    directory = Path('./scans/nmap/json')
     for file_path in directory.iterdir():
         if file_path.is_file() and re.compile(rf'{scantype}*').match(file_path.name):
             file_path.unlink()
-    with open(f"./scans/raw/json/{scantype}_aggregated.json", "w") as f:
+    with open(f"./scans/nmap/json/{scantype}_aggregated.json", "w") as f:
         json.dump(result, f, indent=4)
 
     return result
 
-def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.json"):
+def parse_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.json"):
     """
     Parses Nmap formatted JSON data (from a -sVC scan) and returns a cleaned dict.
     Also writes to a JSON file with simplified structure.

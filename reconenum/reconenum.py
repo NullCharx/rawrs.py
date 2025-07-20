@@ -16,6 +16,7 @@ def run(args, config):
 
     Protocol submenus:
       rawrs.py reconenum smb                     SMB-specific enumeration
+      rawrs.py reconenum smb                     SMB-specific enumeration
       rawrs.py reconenum dns                     DNS analysis tools
       rawrs.py reconenum ssh                     SSH version and key gathering
       rawrs.py reconenum ftp                     FTP login/anon checks

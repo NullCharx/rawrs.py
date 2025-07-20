@@ -16,9 +16,9 @@ def create_project(name, config):
         for folder in project_folders:
             (project_path / folder).mkdir()
             if folder == "scans":
-                (project_path / folder / "raw").mkdir()
-                (project_path / folder / "raw"/"xml").mkdir()
-                (project_path / folder / "raw"/"json").mkdir()
+                (project_path / folder / "nmap").mkdir()
+                (project_path / folder / "nmap"/"xml").mkdir()
+                (project_path / folder / "nmap"/"json").mkdir()
 
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
@@ -35,7 +35,6 @@ def checkpwdisproject():
     for project in project_folders:
         current_dir = os.getcwd()
         if not os.path.isdir(current_dir + "/" + project):
-            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
             return False
     return True
 

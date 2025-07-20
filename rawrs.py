@@ -169,4 +169,5 @@ if __name__ == "__main__":
             except IndexError:
                 mainarghelpmessage(None)
         else:
+            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
             exit(1)
