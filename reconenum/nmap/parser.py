@@ -103,7 +103,7 @@ def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.j
                 hostname = hn.get("Name")
                 break
 
-        key = f"ip:{ip}"
+        key = f"{ip}"
         result[key] = {
             "hostname": hostname,
             "ports": []
@@ -113,7 +113,7 @@ def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.j
         if ports:
             for port in ports :
                 port_info = {
-                    "port": port.get("PortId"),
+                    "port": port.get("PortID"),
                     "protocol": port.get("Protocol"),
                     "state": port.get("State", {}).get("State"),
                     "reason": port.get("State", {}).get("Reason"),
@@ -127,9 +127,7 @@ def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.j
                         "name": service.get("Name"),
                         "product": service.get("Product"),
                         "version": service.get("Version"),
-                        "ostype": service.get("OSType"),
                         "extrainfo": service.get("Extrainfo"),
-                        "tunnel": service.get("Tunnel"),
                         "method": service.get("Method"),
                         "conf": service.get("Conf"),
                         "cpe": service.get("CPE")
@@ -139,7 +137,7 @@ def parse_full_discovery(json_data, output_path="./scans/final_scan_aggregated.j
                     if scripts:
                         for script in scripts:
                             port_info["scripts"].append({
-                                "id": script.get("Id"),
+                                "id": script.get("ID"),
                                 "output": script.get("Output")
                             })
 
