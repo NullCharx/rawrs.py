@@ -155,18 +155,18 @@ if __name__ == "__main__":
     save_global_config(config)
     print(f"\n{bcolors.OKCYAN}[+] Toolkit environment is ready.{bcolors.RESET}")
     print(f"______________________________________________________________________")
-    if len(sys.argv) == 1:
+    if len(sys.argv) > 1 and sys.argv[1] == "--gui":
         guimain()
     else:
-        print("Headless mode")
         projectname = os.path.basename(os.getcwd())
         if checkpwdisproject():
             context_manager.current_project = os.getcwd()
+            try:
+                command = sys.argv[1]
+                args = sys.argv[2:]
+                command_map[command](args, config)
+                mainarghelpmessage(sys.argv[1])
+            except IndexError:
+                mainarghelpmessage(None)
         else:
             exit(1)
-
-        command = sys.argv[1]
-        args = sys.argv[2:]
-        mainarghelpmessage(sys.argv[1])
-
-        command_map[command](args, config)

@@ -3,8 +3,11 @@ import datetime
 import json
 import os
 import subprocess
+from types import NoneType
+
 from core import context_manager
 from core.config import bcolors
+from core.context_manager import setTargets
 from reconenum.nmap.parser import parse_host_discovery, parse_full_discovery
 
 
@@ -53,7 +56,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 
 
 #Make host run both sylent and unsilent scans and aggregate them
-def full_discovery(ip_range, config):
+def full_discovery(ip_range : list, isOverwrite : bool, config):
 
     # Firstly for all IPs (single list or CIDR) we:
     #Make a regular scan first, then get the relevant (host up) results
@@ -66,22 +69,29 @@ def full_discovery(ip_range, config):
     args = ["-sn"]
     args += ip_range
     host_discovery_results = run_nmap_scan(args, "host_discovery")
-    host_discovery_results = parse_host_discovery(host_discovery_results, "host_discovery")
-    print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
-    print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
+    if not host_discovery_results.get("Host", []) is None:
+        host_discovery_results = parse_host_discovery(host_discovery_results, "host_discovery")
+        print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
+        print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
 
     # STEP 2 – Additional discovery with -Pn or -PS/PA for stealthy or filtered hosts
     args[0] = f"-sS"
     stealth_discovery_result = run_nmap_scan(args, "stealth_discovery")
-    stealth_discovery_result = parse_host_discovery(stealth_discovery_result, "stealth_discovery")
-    print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
-    print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
+    if not stealth_discovery_result.get("Host", []) is None:
+        stealth_discovery_result = parse_host_discovery(stealth_discovery_result, "stealth_discovery")
+        print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
+        print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
+    elif host_discovery_results.get("Host", []) is None and stealth_discovery_result.get("Host", []) is None:
+        print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
+        print(f"---------------------------------{bcolors.RESET}\n")
+        exit(3)
 
-    # STEP 3 – Union de resultados
+    # STEP 3 – Join results of normal and stealth scan
     all_up_hosts = host_discovery_results.copy()
     for k, v in stealth_discovery_result.items():
         if k not in all_up_hosts:
             all_up_hosts[k] = v
+    setTargets(list(all_up_hosts.keys()), isOverwrite)
     print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
     # STEP 4 – Port scan with service detection (-sVC)
@@ -92,4 +102,4 @@ def full_discovery(ip_range, config):
     full_scan = run_nmap_scan(args, "full_scan")
     full_scan = parse_full_discovery(full_scan, "full_scan",ip_range)
 
-    print("\n[✔] Full discovery completed.\n")
+    print(f"\n{bcolors.RESET}[✔] Full discovery completed.{bcolors.RESET}\n\n")

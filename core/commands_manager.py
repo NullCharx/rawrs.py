@@ -10,6 +10,8 @@ A tool intended to automate repetitive recon and scanning tasks,
 especially focused on OSCP-style workflows.
 
 Main subcommands:
+  rawrs.py --gui      -> Launch the Terminal GUI mode (experimental)
+
   rawrs.py enum       -> Port and service scanning utilities
   rawrs.py tunnel     -> Tunneling and proxy setup
   rawrs.py osint      -> Passive information gathering
