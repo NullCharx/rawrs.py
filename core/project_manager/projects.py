@@ -19,6 +19,8 @@ def create_project(name, config):
                 (project_path / folder / "nmap").mkdir()
                 (project_path / folder / "nmap"/"xml").mkdir()
                 (project_path / folder / "nmap"/"json").mkdir()
+            elif folder == "results":
+                (project_path / folder / "whatweb").mkdir()
 
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {

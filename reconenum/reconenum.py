@@ -3,6 +3,8 @@ import re
 from reconenum.nmap import parser
 from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
+from reconenum.web.webscanner import web_scan
+
 
 def run(args, config):
     if not args:
@@ -40,10 +42,12 @@ def run(args, config):
         full_discovery(subargs, isoverwrite, config)
 
 
-    elif subcommand == "smb":
-        smb_scan(subargs, config)
+    elif subcommand == "web":
+        web_scan(subargs, config)
     elif subcommand == "dns":
         dns_scan(subargs, config)
+    elif subcommand == "smb":
+        smb_scan(subargs, config)
     elif subcommand == "ftp":
         ftp_scan(subargs, config)
     elif subcommand == "ssh":
