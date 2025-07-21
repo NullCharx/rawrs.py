@@ -43,6 +43,7 @@ def run(args, config):
 
 
     elif subcommand == "web":
+        subargs = parse_input(subargs)
         web_scan(subargs, config)
     elif subcommand == "dns":
         dns_scan(subargs, config)
