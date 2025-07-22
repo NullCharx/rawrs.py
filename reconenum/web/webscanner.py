@@ -1,3 +1,6 @@
+import json
+
+from core.context_manager import current_project
 from reconenum.web.whatweb import whatwebexecutor
 
 
@@ -9,12 +12,15 @@ def web_scan(subargs,config):
           rawrs.py enum web  [ARGUMENTS] <options>
           
           [ARGUMENTS] can be either an ip, list of IPs or CIDR or one of the following:
+          
           -auto                                     Use the IPs gathered on a enum fullscan run if there are any, else error.
 
         Examples:
           rawrs.py reconenum web --auto             web fingerprinting of the IPs gathered during a fullscan
           rawrs.py reconenum web 192.168.1.1        web fingerprinting of 192.168.1.1
+          rawrs.py reconenum web 192.168.1.1:44     web fingerprinting of 192.168.1.1 specifying an uncommon port
 
         ''')
         return
-    whatwebexecutor(subargs)
+    else:
+        whatwebexecutor(subargs)

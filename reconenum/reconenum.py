@@ -1,5 +1,9 @@
 import ipaddress
+import json
 import re
+
+from core import context_manager
+from core.context_manager import current_project
 from reconenum.nmap import parser
 from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
@@ -43,7 +47,15 @@ def run(args, config):
 
 
     elif subcommand == "web":
-        subargs = parse_input(subargs)
+
+        if subargs[0] == "--auto":
+            global current_project
+            with open(f"{context_manager.current_project}/context.json") as f:
+                data = json.load(f)
+
+            subargs = data["targets"]
+        else:
+            subargs = parse_input(subargs)
         web_scan(subargs, config)
     elif subcommand == "dns":
         dns_scan(subargs, config)

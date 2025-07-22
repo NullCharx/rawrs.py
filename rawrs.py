@@ -14,6 +14,7 @@ from prompt_toolkit.styles import Style
 from core import context_manager
 from core.commands_manager import mainarghelpmessage, command_map
 from core.config import load_global_config, save_global_config
+from core.context_manager import current_project
 from core.project_manager.projects import create_project, project_folders, checkpwdisproject
 from core.config import bcolors
 
@@ -160,6 +161,7 @@ if __name__ == "__main__":
     else:
         projectname = os.path.basename(os.getcwd())
         if checkpwdisproject():
+            global current_project
             context_manager.current_project = os.getcwd()
             try:
                 command = sys.argv[1]

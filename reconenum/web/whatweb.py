@@ -5,8 +5,6 @@ import tempfile
 
 def whatwebexecutor(targets):
     #check if the base parser is called??
-    print(targets)
-    print(' '.join(targets))
     if len(targets) > 1:
         for target in targets:
 
@@ -17,5 +15,4 @@ def whatwebexecutor(targets):
                 print(status.stderr.decode())
                 os.remove(f"./results/whatweb/{''.join(target)}.json")
     else:
-        print("wewew")
         subprocess.run(["whatweb","-v","-a 3"] + targets + [f"--log-json=./results/whatweb/{''.join(targets)}.json"], capture_output=False, check=True)
