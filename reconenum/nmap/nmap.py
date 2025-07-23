@@ -6,6 +6,7 @@ import subprocess
 from types import NoneType
 
 from core import context_manager
+from core.ServiceSorter import serviceSorter
 from core.config import bcolors
 from core.context_manager import setTargets
 from reconenum.nmap.parser import parse_host_discovery, parse_full_discovery
@@ -97,4 +98,6 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
     full_scan = run_nmap_scan(args, "full_scan")
     full_scan = parse_full_discovery(full_scan)
 
+    #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
+    serviceSorter()
     print(f"\n{bcolors.RESET}[✔] Full discovery completed.{bcolors.RESET}\n\n")

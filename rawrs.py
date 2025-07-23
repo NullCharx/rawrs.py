@@ -97,6 +97,33 @@ def init_environment(config):
     else:
         print(f"{bcolors.OKGREEN}[+] Dirb installed{bcolors.RESET}")
 
+    #ffuf
+    if not shutil.which("ffuf"):
+        try:
+            result = subprocess.run(
+                ["apt", "install", "ffuf"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] ffuf couldn't be installed. Please manually install ffuf go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[+] ffuf installed{bcolors.RESET}")
+
+    #fzf
+    if not shutil.which("fzf"):
+        try:
+            result = subprocess.run(
+                ["apt", "install", "fzf"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] fzf couldn't be installed. Please manually install fzf go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[+] fzf installed{bcolors.RESET}")
+
+
     #Create default project
     if not checkpwdisproject():
         create_project(config["default_project"], config)
