@@ -21,27 +21,83 @@ from core.config import bcolors
 def init_environment(config):
     print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
     if not shutil.which("go"):
-        print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH. Please install go as its needed by some subtools.{bcolors.RESET}")
-    else:
+        print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH. Trying to install.{bcolors.RESET}")
         try:
-            env = os.environ.copy()
-            env["CC"] = "/usr/bin/gcc"
             result = subprocess.run(
-                ["go", "install", "github.com/vdjagilev/nmap-formatter/v3@latest"],
-                capture_output=True,
-                text=True,
-                env=env,
-                check=True
+                ["apt", "install", "golang"],
+                capture_output=False,
             )
-            print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed:\n{result.stdout}{bcolors.RESET}")
-        except subprocess.CalledProcessError as e:
-            print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
-            print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
+        except Exception:
+            print(f"{bcolors.FAIL}[!] Golang couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
             exit(1)
-        except FileNotFoundError:
-            print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH.{bcolors.RESET}")
-            exit(1)
+    #go and nmap-formatter
+    try:
+        env = os.environ.copy()
+        env["CC"] = "/usr/bin/gcc"
+        result = subprocess.run(
+            ["go", "install", "github.com/vdjagilev/nmap-formatter/v3@latest"],
+            capture_output=True,
+            text=True,
+            env=env,
+            check=True
+        )
+        print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed:\n{result.stdout}{bcolors.RESET}")
+    except subprocess.CalledProcessError as e:
+        print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
+        exit(1)
+    except FileNotFoundError:
+        print(f"{bcolors.FAIL}[!] Go is not installed or not in PATH.{bcolors.RESET}")
+        exit(1)
     context_manager.projects_path = Path(config["projects_dir"])
+
+    #Seclists
+    if not os.path.exists("/usr/share/wordlists/SecLists") and not os.path.exists("/usr/share/SecLists"):
+        print(f"{bcolors.FAIL}[!] Seclists wasn't detected on common locations. Installing on /usr/share/SecLists.{bcolors.RESET}")
+        if not shutil.which("git"):
+            print(f"{bcolors.FAIL}[-] git is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+            try:
+                result = subprocess.run(
+                    ["apt", "install", "git"],
+                    capture_output=False,
+                )
+            except Exception:
+                print(f"{bcolors.FAIL}[!] Git couldn't be installed. Please manually install git as its needed to insall SecLists.{bcolors.RESET}")
+                exit(1)
+        try:
+            result = subprocess.run(
+                ["git", "clone", "https://github.com/danielmiessler/SecLists.git"],
+                capture_output=False,
+                cwd="/usr/share/"
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] Git couldn't be installed. Please manually install git as its needed to install SecLists.{bcolors.RESET}")
+            exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[+] SecList detected. Checking and installing updates. . .{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["git", "pull"],
+                capture_output=False,
+                cwd="/usr/share/SecLists"
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] Git couldn't be installed. Please manually install git as its needed to insall SecLists.{bcolors.RESET}")
+            exit(1)
+
+    #Dirb
+    if not shutil.which("dirb"):
+        try:
+            result = subprocess.run(
+                ["apt", "install", "dirb"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] Dirb couldn't be installed. Please manually dirb go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[+] Dirb installed{bcolors.RESET}")
+
+    #Create default project
     if not checkpwdisproject():
         create_project(config["default_project"], config)
 
