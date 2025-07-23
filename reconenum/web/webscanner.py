@@ -1,5 +1,6 @@
 import json
 
+from core import context_manager
 from core.context_manager import current_project, saveTargetContext
 from reconenum.web.whatweb import whatwebexecutor
 
@@ -26,24 +27,20 @@ def web_scan(subargs,config):
         whatwebexecutor(subargs)
 
 
-import json
 
-import json
-
-import json
-
-def extract_http_services(current_project="./projects/default_project"):
+def extract_http_services():
     # Load full scan results
     with open("./results/nmap_aggregated_scan.json", "r") as f:
         full_scan = json.load(f)
 
+    global current_project
     # Load context with plain IPs
-    with open(f"{current_project}/context.json", "r") as f:
+    with open(f"{context_manager.current_project}/context.json", "r") as f:
         context = json.load(f)
     targets = context.get("targets", [])
 
     http_services = {}
-
+    print("UEUEUEUUE")#FALLA DE AQUI PABAJO UWU
     for ip in targets:
         scan_key = f"ip:{ip}"  # Matches key in aggregated scan
 
@@ -61,5 +58,5 @@ def extract_http_services(current_project="./projects/default_project"):
 
         if services:
             http_services[ip] = services
-
+        print("YUWYAYAYAY")
         saveTargetContext(http_services)

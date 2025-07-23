@@ -29,11 +29,17 @@ def setTargets(listoftargets : list, overwrite : bool = False):
     saveContext()
 
 def saveTargetContext (targetCtx):
+    global targets
+    targets = targetCtx
+    print("WEREEFERER")
+    print(targetCtx)
+
+    saveContext()
+
+
+def getTargets():
     with open(f'{current_project}/context.json', 'r') as file:
         data = json.load(file)  # Parse the JSON file into a Python dictionary
-    data['targets'] = targetCtx
+    return data['targets']
 
-    # Write the modified data back to context.json
-    with open(f'{current_project}/context.json', 'w') as file:
-        json.dump(data, file, indent=4)  # Writing back with indentation for readability
 

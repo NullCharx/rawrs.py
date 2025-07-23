@@ -9,10 +9,7 @@ from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
 from reconenum.web.webscanner import web_scan
 
-
-def run(args, config):
-    if not args:
-        print('''
+helpmsg = '''
     Scan subtool for ports, services, and protocols.
 
       rawrs.py enum fullscan [IP range or list separated by commas]   Discover up hosts in an IP range; performs host discovery by various means, port detection and then service and common vuln detection on open ports.
@@ -30,7 +27,11 @@ def run(args, config):
     Examples:
     rawrs.py enum fullscan -o  192.168.1.0/24                                   Perform a fullscan on the provided CIDR. The detected hosts will overwrite any previosuly detected hosts.
     rawrs.py enum fullscan 192.168.1.1,192.168.1.2,192.168.1.3,192.168.1.4      Perform a fullscan on the provided list. Detected hosts will be appended to existing targets.
-    ''')
+    '''
+
+def run(args, config):
+    if not args:
+        print(helpmsg)
         return
 
     subcommand = args[0]
@@ -38,6 +39,9 @@ def run(args, config):
 
     if subcommand == "fullscan":
         isoverwrite = False
+        if not subargs:
+            print(helpmsg)
+            exit(1)
         if subargs[0] == '-o':
             del subargs[0]
             isoverwrite = True
@@ -67,6 +71,7 @@ def run(args, config):
         ssh_scan(subargs, config)
     else:
         print(f"Unknown scan subcommand: {subcommand}")
+        print(helpmsg)
 
 
 

@@ -3,11 +3,11 @@ import subprocess
 import tempfile
 
 
+
 def whatwebexecutor(targets):
     #check if the base parser is called??
     if len(targets) > 1:
         for target in targets:
-            checkhttpports(target)
             status=subprocess.run(
                     ["whatweb", "-v", "-a 3", f"{target}", f"--log-json=./results/whatweb/{''.join(target)}.json"],
                     stderr=subprocess.PIPE,capture_output=False, check=True)
