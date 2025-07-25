@@ -25,34 +25,3 @@ def web_scan(subargs,config):
         return
     else:
         whatwebexecutor(subargs)
-
-
-
-def extract_http_services():
-    # Load full scan results
-    with open("./results/nmap_aggregated_scan.json", "r") as f:
-        full_scan = json.load(f)
-
-    global current_project
-    # Load context with plain IPs
-    with open(f"{context_manager.current_project}/context.json", "r") as f:
-        context = json.load(f)
-    targets = context.get("targets", [])
-
-    http_services = {}
-    for ip in targets:
-
-        services = []
-        for port in full_scan[ip].get("ports", []):
-            service_name = port.get("service", {}).get("name", "")
-#            if service_name in ["http", "https"]:
-            services.append({
-                "Service": service_name,
-                "port": str(port.get("port"))
-                })
-
-        if services:
-            http_services[ip] = services
-        else:
-            http_services[ip] = []
-        saveTargetContext(http_services)

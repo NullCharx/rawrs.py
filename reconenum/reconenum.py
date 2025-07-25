@@ -1,11 +1,5 @@
-import ipaddress
-import json
-import re
-
 from core import context_manager
-from core.context_manager import current_project, loadProjectContextOnMemory
-from reconenum.nmap import parser
-from reconenum.nmap import nmap
+from core.context_manager import loadProjectContextOnMemory
 from reconenum.nmap.nmap import full_discovery
 from reconenum.web.webscanner import web_scan
 
@@ -54,7 +48,7 @@ def run(args, config):
 
         if subargs[0] == "--auto":
             loadProjectContextOnMemory()
-            subargs = context_manager.targets["targets"]
+            subargs = context_manager.targets
         else:
             subargs = parse_input(subargs)
         web_scan(subargs, config)
@@ -100,7 +94,3 @@ def parse_input(input_string):
                 except ValueError as e:
                     raise ValueError(f"Invalid IP address '{part}': {e}")
     return ips
-
-
-
-
