@@ -25,3 +25,6 @@ def web_scan(subargs,config):
         return
     else:
         whatwebexecutor(subargs)
+        # Nikto 2 (Check robots txt, source code credentials etc)
+        # Vulnerabilities to use (Searchsploit, rapid 7 and for exploits github mainly)
+        #Prompt the user to search for manual vulnrable inpouts, url encodings, SQLi...
