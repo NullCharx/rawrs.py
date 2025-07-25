@@ -42,13 +42,9 @@ def extract_http_services():
     http_services = {}
     print("UEUEUEUUE")#FALLA DE AQUI PABAJO UWU
     for ip in targets:
-        scan_key = f"ip:{ip}"  # Matches key in aggregated scan
-
-        if scan_key not in full_scan:
-            continue
 
         services = []
-        for port in full_scan[scan_key].get("ports", []):
+        for port in full_scan[ip].get("ports", []):
             service_name = port.get("service", {}).get("name", "")
             if service_name in ["http", "https"]:
                 services.append({
