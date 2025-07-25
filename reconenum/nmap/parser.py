@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -147,5 +148,6 @@ def parse_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(result, f, indent=4)
-
+    os.remove("./scans/nmap/json/host_discovery_aggregated.json")
+    os.remove("./scans/nmap/json/stealth_discovery_aggregated.json")
     return result

@@ -10,8 +10,6 @@ def whatwebexecutor(targets):
     :param targets: IP, list of IPS or project target context
     :return:
     """
-    print(targets)
-    print("\n")
     if len(targets) > 1:
         for target in targets:
             services = targets.get(target, [])
@@ -22,7 +20,7 @@ def whatwebexecutor(targets):
                         try:
                             os.remove(f"./results/whatweb/{''.join(target)}:{port}.json")
                         except:
-                            continue
+                            pass
 
                         status = subprocess.run(
                             ["whatweb", "-v", "-a 3", f"{target}:{port}",
