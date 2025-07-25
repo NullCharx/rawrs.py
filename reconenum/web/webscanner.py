@@ -46,13 +46,15 @@ def extract_http_services():
         services = []
         for port in full_scan[ip].get("ports", []):
             service_name = port.get("service", {}).get("name", "")
-            if service_name in ["http", "https"]:
-                services.append({
-                    "Service": service_name,
-                    "port": str(port.get("port"))
+#            if service_name in ["http", "https"]:
+            services.append({
+                "Service": service_name,
+                "port": str(port.get("port"))
                 })
 
         if services:
             http_services[ip] = services
+        else:
+            http_services[ip] = []
         print("YUWYAYAYAY")
         saveTargetContext(http_services)
