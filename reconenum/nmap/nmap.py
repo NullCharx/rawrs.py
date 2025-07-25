@@ -8,7 +8,7 @@ from types import NoneType
 from core import context_manager
 from core.ServiceSorter import serviceSorter
 from core.config import bcolors
-from core.context_manager import setTargets, getTargets
+from core.context_manager import setTargets, getTargetsContext
 from reconenum.nmap.parser import parse_host_discovery, parse_full_discovery
 
 
@@ -60,7 +60,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 def full_discovery(ip_range : list, isOverwrite : bool, config):
 
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
-    savedtargets = getTargets()
+    savedtargets = getTargetsContext()
 
     if not savedtargets or isOverwrite:
         # STEP 1 – Basic Host Discovery (ping scan)

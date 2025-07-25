@@ -40,7 +40,6 @@ def extract_http_services():
     targets = context.get("targets", [])
 
     http_services = {}
-    print("UEUEUEUUE")#FALLA DE AQUI PABAJO UWU
     for ip in targets:
 
         services = []
@@ -56,5 +55,4 @@ def extract_http_services():
             http_services[ip] = services
         else:
             http_services[ip] = []
-        print("YUWYAYAYAY")
         saveTargetContext(http_services)

@@ -3,7 +3,7 @@ import json
 import re
 
 from core import context_manager
-from core.context_manager import current_project
+from core.context_manager import current_project, loadProjectContextOnMemory
 from reconenum.nmap import parser
 from reconenum.nmap import nmap
 from reconenum.nmap.nmap import full_discovery
@@ -53,11 +53,8 @@ def run(args, config):
     elif subcommand == "web":
 
         if subargs[0] == "--auto":
-            global current_project
-            with open(f"{context_manager.current_project}/context.json") as f:
-                data = json.load(f)
-
-            subargs = data["targets"]
+            loadProjectContextOnMemory()
+            subargs = context_manager.targets["targets"]
         else:
             subargs = parse_input(subargs)
         web_scan(subargs, config)
