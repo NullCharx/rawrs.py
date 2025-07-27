@@ -4,19 +4,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.widgets import Label, Button
-from prompt_toolkit.layout import Layout, HSplit, VSplit, Dimension, Window
-from prompt_toolkit.application import Application
-from prompt_toolkit.styles import Style
-
 from core import context_manager
 from core.commands_manager import mainarghelpmessage, command_map
 from core.config import load_global_config, save_global_config
-from core.context_manager import current_project
-from core.project_manager.projects import create_project, project_folders, checkpwdisproject
+from core.project_manager.projects import create_project, checkpwdisproject
 from core.config import bcolors
+from rawrsgui import guimain
+
 
 def init_environment(config):
     print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
@@ -41,7 +35,7 @@ def init_environment(config):
             env=env,
             check=True
         )
-        print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed:\n{result.stdout}{bcolors.RESET}")
+        print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed.{result.stdout}{bcolors.RESET}")
     except subprocess.CalledProcessError as e:
         print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
         exit(1)
@@ -123,6 +117,17 @@ def init_environment(config):
     else:
         print(f"{bcolors.OKGREEN}[+] fzf installed{bcolors.RESET}")
 
+    if not shutil.which("wapiti"):
+        try:
+            result = subprocess.run(
+                ["apt", "install", "wapiti"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] wapiti couldn't be installed. Please manually install wapiti go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        print(f"{bcolors.OKGREEN}[+] wapiti installed{bcolors.RESET}")
 
     #Create default project
     if not checkpwdisproject():
@@ -136,98 +141,6 @@ def manage_projects_button(): print("manage")
 def global_settings_button(): print("settings")
 def exit_application(): exit()
 
-def handle_and_exit(label, handler_func):
-    handler_func()
-    app.exit(result=label)
-
-buttons = [
-    [ Button("Load last", lambda: handle_and_exit("Load last", laod_last_project_button)),
-      Button("Load", lambda: handle_and_exit("Load", load_a_project_button)),
-      Button("Create new", lambda: handle_and_exit("Create new", make_new_project_button))],
-    [ Button("Manage", lambda: handle_and_exit("Manage", manage_projects_button)),
-      Button("Settings", lambda: handle_and_exit("Settings", global_settings_button)),
-      Button("Exit", lambda: handle_and_exit("Exit", exit_application))]
-]
-
-button_row = 0
-button_col = 0
-
-def main_menUI(config):
-    text = FormattedText([
-        ('', "Choose a command:\n\n"),
-        ('', "- Load last: load the last opened project: "),
-        ('class:highlight', f"{config.get('last_project')}\n"),
-        ('', "- Load: choose an existing project to load\n"),
-        ('', "- Create new: start a new project\n\n"),
-        ('', "- Manage: manage existing projects\n"),
-        ('', "- Settings: global preferences\n"),
-        ('', "- Exit: close the program"),
-    ])
-
-    # Manual dialog-style layout
-    layout = HSplit([
-        Window(height=1, char=" "),
-        Label(text=text),
-        Window(height=1, char=" "),
-        VSplit(buttons[0], padding=3, align="CENTER"),
-        Window(height=1, char=" "),
-        VSplit(buttons[1], padding=3, align="CENTER"),
-        Window(height=1, char=" "),
-    ], width=Dimension(preferred=80))
-
-    style = Style.from_dict({
-        "highlight": "fg:#ffaf00 bold",
-        "dialog": "bg:#1c1c1c fg:#ffffff",
-    })
-
-    kb = KeyBindings()
-
-    @kb.add('left')
-    def izquierda(event):
-        global button_row, button_col
-        if button_col > 0:
-            button_col -= 1
-        enfocar_boton(event)
-
-    @kb.add('right')
-    def derecha(event):
-        global button_row, button_col
-        if button_col < len(buttons[button_row]) - 1:
-            button_col += 1
-        enfocar_boton(event)
-
-    @kb.add('up')
-    def arriba(event):
-        global button_row, button_col
-        if button_row > 0:
-            button_row -= 1
-            button_col = min(button_col, len(buttons[button_row]) - 1)
-        enfocar_boton(event)
-
-    @kb.add('down')
-    def abajo(event):
-        global button_row, button_col
-        if button_row < len(buttons) - 1:
-            button_row += 1
-            button_col = min(button_col, len(buttons[button_row]) - 1)
-        enfocar_boton(event)
-
-    def enfocar_boton(event):
-        btn = buttons[button_row][button_col]
-        event.app.layout.focus(btn)
-
-    global app
-    app = Application(
-        layout=Layout(layout),
-        full_screen=True,
-        style=style,
-        key_bindings=kb
-    )
-
-def guimain():
-    main_menUI(config)
-    result = app.run()
-    print(f"Result = {result}")
 
 if __name__ == "__main__":
     print(f"{bcolors.BOLD}Welcome to the Really Awesome Recon and Scan tool 0.a1! (Name pending){bcolors.RESET}")

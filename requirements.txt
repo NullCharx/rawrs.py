@@ -1,2 +1,6 @@
 prompt_toolkit~=3.0.51
 Pygments~=2.19.1
+prompt_toolkit~=3.0.51
+requests~=2.32.4
+python-Wappalyzer~=0.3.1
+colorama~=0.4.6

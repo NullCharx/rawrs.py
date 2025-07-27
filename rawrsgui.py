@@ -1,0 +1,105 @@
+from prompt_toolkit import Application
+from prompt_toolkit.formatted_text import FormattedText
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.layout import HSplit, Window, VSplit, Dimension, Layout
+from prompt_toolkit.styles import Style
+from prompt_toolkit.widgets import Button, Label
+
+from rawrsold import laod_last_project_button, load_a_project_button, make_new_project_button, manage_projects_button, \
+    global_settings_button, exit_application, config
+
+
+def handle_and_exit(label, handler_func):
+    handler_func()
+    app.exit(result=label)
+
+
+buttons = [
+    [ Button("Load last", lambda: handle_and_exit("Load last", laod_last_project_button)),
+      Button("Load", lambda: handle_and_exit("Load", load_a_project_button)),
+      Button("Create new", lambda: handle_and_exit("Create new", make_new_project_button))],
+    [ Button("Manage", lambda: handle_and_exit("Manage", manage_projects_button)),
+      Button("Settings", lambda: handle_and_exit("Settings", global_settings_button)),
+      Button("Exit", lambda: handle_and_exit("Exit", exit_application))]
+]
+button_row = 0
+button_col = 0
+
+
+def main_menUI(config):
+    text = FormattedText([
+        ('', "Choose a command:\n\n"),
+        ('', "- Load last: load the last opened project: "),
+        ('class:highlight', f"{config.get('last_project')}\n"),
+        ('', "- Load: choose an existing project to load\n"),
+        ('', "- Create new: start a new project\n\n"),
+        ('', "- Manage: manage existing projects\n"),
+        ('', "- Settings: global preferences\n"),
+        ('', "- Exit: close the program"),
+    ])
+
+    # Manual dialog-style layout
+    layout = HSplit([
+        Window(height=1, char=" "),
+        Label(text=text),
+        Window(height=1, char=" "),
+        VSplit(buttons[0], padding=3, align="CENTER"),
+        Window(height=1, char=" "),
+        VSplit(buttons[1], padding=3, align="CENTER"),
+        Window(height=1, char=" "),
+    ], width=Dimension(preferred=80))
+
+    style = Style.from_dict({
+        "highlight": "fg:#ffaf00 bold",
+        "dialog": "bg:#1c1c1c fg:#ffffff",
+    })
+
+    kb = KeyBindings()
+
+    @kb.add('left')
+    def izquierda(event):
+        global button_row, button_col
+        if button_col > 0:
+            button_col -= 1
+        enfocar_boton(event)
+
+    @kb.add('right')
+    def derecha(event):
+        global button_row, button_col
+        if button_col < len(buttons[button_row]) - 1:
+            button_col += 1
+        enfocar_boton(event)
+
+    @kb.add('up')
+    def arriba(event):
+        global button_row, button_col
+        if button_row > 0:
+            button_row -= 1
+            button_col = min(button_col, len(buttons[button_row]) - 1)
+        enfocar_boton(event)
+
+    @kb.add('down')
+    def abajo(event):
+        global button_row, button_col
+        if button_row < len(buttons) - 1:
+            button_row += 1
+            button_col = min(button_col, len(buttons[button_row]) - 1)
+        enfocar_boton(event)
+
+    def enfocar_boton(event):
+        btn = buttons[button_row][button_col]
+        event.app.layout.focus(btn)
+
+    global app
+    app = Application(
+        layout=Layout(layout),
+        full_screen=True,
+        style=style,
+        key_bindings=kb
+    )
+
+
+def guimain():
+    main_menUI(config)
+    result = app.run()
+    print(f"Result = {result}")

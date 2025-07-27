@@ -2,7 +2,7 @@ import json
 
 from core import context_manager
 from core.context_manager import current_project, saveTargetContext, loadProjectContextOnMemory
-from reconenum.parser import parse_ip_inputs, parseWebtechResults
+from reconenum.parser import parse_ip_inputs, parse_whatweb_results, parse_web_targets
 from reconenum.web.whatweb import whatwebexecutor
 
 
@@ -18,7 +18,7 @@ def web_scan(tool,subargs,config):
           fingerprint                               Run whatweb on the targets to enumeate technologies used
         
           [ARGUMENT] can be either an ip, list of IPs or CIDR or one of the following:
-          -auto                                     Use the IPs gathered on a enum fullscan run if there are any, else error.
+          --auto                                     Use the IPs gathered on a enum fullscan run if there are any, else error.
         
         
         Examples:
@@ -29,16 +29,22 @@ def web_scan(tool,subargs,config):
         ''')
         return
     else:
+        argument = None
+        if subargs[-1].startswith("--") or subargs[0].startswith("-"):
+            argument = subargs[0]
+            del subargs[0]
+
         if tool == "fingerprint" or tool == "completescan":
-            if subargs[0] == "--auto":
+            if argument and argument == "--auto":
                 loadProjectContextOnMemory()
                 subargs = context_manager.targets
             else:
                 subargs = parse_ip_inputs(subargs)
+            parse_web_targets(subargs)
+            whatwebexecutor(subargs)
+
         if tool == "whatever" or tool == "completescan":
             pass
-        scannedtargets = whatwebexecutor(subargs)
-        parseWebtechResults(scannedtargets)
 
         # Probably a whatweb parser and add technologies and versions to the context
         #

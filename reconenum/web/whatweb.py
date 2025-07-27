@@ -1,14 +1,19 @@
 import os
 import subprocess
 
+from reconenum.parser import parse_whatweb_results
 
 
-def whatwebexecutor(targets) -> list:
+#make the web target parser, call it from outside here and pass it in to every web method
+def whatwebexecutor(targets):
     """
     Calls whatweb executable with given targets- It can be a single target, or a list of targets.
-    The list of targets can also be the projects target context to perform the --auto whatweb scan
+    The list of targets can also be the projects target context to perform the --auto whatweb scan.
+    Programatically it can check for any service web port on the target list but it for quickness web
+    ports should be checked outside here
+
     :param targets: IP, list of IPS or project target context
-    :return: a list with the target ips and ports that were scan to parse after
+    :return:
     """
     scannedlist = []
     if len(targets) > 1:
@@ -42,5 +47,8 @@ def whatwebexecutor(targets) -> list:
     else:
         scannedlist.append(targets[0])
         subprocess.run(["whatweb","-v","-a 3"] + targets + [f"--log-json=./scans/whatweb/{''.join(targets)}.json"], capture_output=False, check=True)
-    return scannedlist
+    parse_whatweb_results(scannedlist)
+
+
+
 

@@ -5,6 +5,32 @@ import os
 import re
 from pathlib import Path
 
+def parse_ip_inputs(input_string):
+    """
+    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
+    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
+    CIDRs are expanded into all contained IPs.
+    """
+    if isinstance(input_string, str):
+        input_string = [input_string]
+
+    ips = []
+
+    for entry in input_string:
+        # Split by comma in case of comma-separated entries
+        parts = [p.strip() for p in entry.split(',') if p.strip()]
+        for part in parts:
+            #Return the CIDR
+            if '/' in part:
+                return [part]
+            else:
+                #Get the parsed list and try to parse it before adding
+                try:
+                    ip = ipaddress.ip_address(part)
+                    ips.append(str(ip))
+                except ValueError as e:
+                    raise ValueError(f"Invalid IP address '{part}': {e}")
+    return ips
 
 def parse_nmap_host_discovery(json_data, scantype):
     """
@@ -51,7 +77,6 @@ def parse_nmap_host_discovery(json_data, scantype):
         json.dump(result, f, indent=4)
 
     return result
-
 
 def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.json"):
     """
@@ -154,36 +179,26 @@ def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_
     os.remove("./scans/nmap/json/stealth_discovery_aggregated.json")
     return result
 
-
-def parse_ip_inputs(input_string):
+def parse_web_targets(targets) -> list:
     """
-    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
-    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
-    CIDRs are expanded into all contained IPs.
+    Parses the list of a scan to get web enabled targets
+    :return:
     """
-    if isinstance(input_string, str):
-        input_string = [input_string]
-
-    ips = []
-
-    for entry in input_string:
-        # Split by comma in case of comma-separated entries
-        parts = [p.strip() for p in entry.split(',') if p.strip()]
-        for part in parts:
-            #Return the CIDR
-            if '/' in part:
-                return [part]
+    scannedlist = []
+    if len(targets) > 1:
+        for target in targets:
+            services = targets.get(target, [])
+            if services:
+                for service in services:
+                    if service.get("Service",[]) == "http" or service.get("Service",[]) == "https":
+                        port=service.get("port",[])
             else:
-                #Get the parsed list and try to parse it before adding
-                try:
-                    ip = ipaddress.ip_address(part)
-                    ips.append(str(ip))
-                except ValueError as e:
-                    raise ValueError(f"Invalid IP address '{part}': {e}")
-    return ips
+                scannedlist.append(target)
+    else:
+        scannedlist = targets
+    return scannedlist
 
-
-def parseWebtechResults(list):
+def parse_whatweb_results(list):
     """
     Parse the whateb scaner results in a new easier readable and processable file
     :param list:
@@ -210,8 +225,7 @@ def parseWebtechResults(list):
                 # Decode HTML entities
                 target_info["title"] = html.unescape(title[0])
 
-            # Example of extracting version info from server string
-            # You can extend this logic for specific parsing
+            # Version info for server
             if http_server:
                 parts = http_server[0].split()
                 if len(parts) > 1 and any(char.isdigit() for char in parts[1]):
