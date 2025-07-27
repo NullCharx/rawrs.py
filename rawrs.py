@@ -139,11 +139,22 @@ def build_parser() -> argparse.ArgumentParser:
     p_osint.set_defaults(func=cmd_osint)
 
     return mainparser
+def preparse_verbose(argv):
+    """Parse ONLY -v/--verbose before the full parser exists."""
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("-v", "--verbose", action="count", default=0)
+    # parse_known_args ignore the rest safely
+    args, _ = pre.parse_known_args(argv)
+    if not args.verbose:
+        return 0
+    return args.verbose
 
-def init_environment(config):
-    print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
+def init_environment(verbosity,config):
+    if verbosity > 2:
+        print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
     if not shutil.which("go"):
-        print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] Go is not installed or not in PATH. Trying to install.{bcolors.RESET}")
         try:
             result = subprocess.run(
                 ["apt", "install", "golang"],
@@ -163,7 +174,8 @@ def init_environment(config):
             env=env,
             check=True
         )
-        print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed.{result.stdout}{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] nmap-formatter installed succesfully or already installed.{result.stdout}{bcolors.RESET}")
     except subprocess.CalledProcessError as e:
         print(f"{bcolors.FAIL}[!] Failed to install Go package:\n{e.stderr}{bcolors.RESET}")
         exit(1)
@@ -174,9 +186,11 @@ def init_environment(config):
 
     #Seclists
     if not os.path.exists("/usr/share/wordlists/SecLists") and not os.path.exists("/usr/share/SecLists"):
-        print(f"{bcolors.FAIL}[!] Seclists wasn't detected on common locations. Installing on /usr/share/SecLists.{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[!] Seclists wasn't detected on common locations. Installing on /usr/share/SecLists.{bcolors.RESET}")
         if not shutil.which("git"):
-            print(f"{bcolors.FAIL}[-] git is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+            if verbosity > 2:
+                print(f"{bcolors.FAIL}[-] git is not installed or not in PATH. Trying to install.{bcolors.RESET}")
             try:
                 result = subprocess.run(
                     ["apt", "install", "git"],
@@ -195,7 +209,8 @@ def init_environment(config):
             print(f"{bcolors.FAIL}[!] Git couldn't be installed. Please manually install git as its needed to install SecLists.{bcolors.RESET}")
             exit(1)
     else:
-        print(f"{bcolors.OKGREEN}[+] SecList detected. Checking and installing updates. . .{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] SecList detected. Checking and installing updates. . .{bcolors.RESET}")
         try:
             result = subprocess.run(
                 ["git", "pull"],
@@ -217,7 +232,8 @@ def init_environment(config):
             print(f"{bcolors.FAIL}[!] Dirb couldn't be installed. Please manually dirb go as its needed by some subtools.{bcolors.RESET}")
             exit(1)
     else:
-        print(f"{bcolors.OKGREEN}[+] Dirb installed{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] Dirb installed{bcolors.RESET}")
 
     #ffuf
     if not shutil.which("ffuf"):
@@ -230,7 +246,8 @@ def init_environment(config):
             print(f"{bcolors.FAIL}[!] ffuf couldn't be installed. Please manually install ffuf go as its needed by some subtools.{bcolors.RESET}")
             exit(1)
     else:
-        print(f"{bcolors.OKGREEN}[+] ffuf installed{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] ffuf installed{bcolors.RESET}")
 
     #fzf
     if not shutil.which("fzf"):
@@ -243,7 +260,8 @@ def init_environment(config):
             print(f"{bcolors.FAIL}[!] fzf couldn't be installed. Please manually install fzf go as its needed by some subtools.{bcolors.RESET}")
             exit(1)
     else:
-        print(f"{bcolors.OKGREEN}[+] fzf installed{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] fzf installed{bcolors.RESET}")
 
     if not shutil.which("wapiti"):
         try:
@@ -255,11 +273,12 @@ def init_environment(config):
             print(f"{bcolors.FAIL}[!] wapiti couldn't be installed. Please manually install wapiti go as its needed by some subtools.{bcolors.RESET}")
             exit(1)
     else:
-        print(f"{bcolors.OKGREEN}[+] wapiti installed{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] wapiti installed{bcolors.RESET}")
 
     #Create default project
     if not checkdirectoryisproject("cwd"):
-        create_project(config["default_project"], config)
+        create_project(config["default_project"], verbosity, config)
 
 # -------------------------------------------------
 # Main
@@ -276,8 +295,10 @@ def main():
         exit(10)
 
     #Init current environment
+    # -------- Stage 1: pre-parse verbosity --------
+    verbosity = preparse_verbose(sys.argv[1:])
     config = load_global_config()
-    init_environment(config)
+    init_environment(verbosity,config)
     save_global_config(config)
     print(f"\n{bcolors.OKCYAN}[+] Toolkit environment is ready.{bcolors.RESET}")
     print(f"______________________________________________________________________")

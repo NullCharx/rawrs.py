@@ -10,15 +10,17 @@ project_folders = ["results", "scans","tunnels"]
 required_files = ['notes.md', 'context.json']
 
 
-def create_project(name, config):
+def create_project(name, verbosity, config):
     """Create a project folder with default structure."""
     projects_folder = Path(config["projects_dir"])
     project_path = projects_folder / name
     if not projects_folder.exists():
-        print(f"{bcolors.WARNING}[+] Creating projects folder {projects_folder} in this location:{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.WARNING}[+] Creating projects folder {projects_folder} in this location:{bcolors.RESET}")
         projects_folder.mkdir()
     if not project_path.exists():
-        print(f"{bcolors.WARNING}[+] Creating project: {name}{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.WARNING}[+] Creating project: {name}{bcolors.RESET}")
         project_path.mkdir()
         for folder in project_folders:
             (project_path / folder).mkdir()
@@ -37,7 +39,8 @@ def create_project(name, config):
         with open(project_path / "context.json", "w") as f:
             json.dump(context, f, indent=2)
     else:
-        print(f"{bcolors.WARNING}[+] Project '{name}' already exists.{bcolors.RESET}")
+        if verbosity > 2:
+            print(f"{bcolors.WARNING}[+] Project '{name}' already exists.{bcolors.RESET}")
 
 def checkdirectoryisproject(path):
     directory = ""

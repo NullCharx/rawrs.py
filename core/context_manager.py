@@ -112,6 +112,5 @@ def setcurrentenvproject(args):
         else:
             print(f"\n{bcolors.FAIL}[-] Path {args.project} is not a recognized project. Aborting{bcolors.RESET}")
             exit(1)
-    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     print(current_project)
     file_content.update({"last_project": current_project})

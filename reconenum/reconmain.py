@@ -56,39 +56,39 @@ def initreconenumsubparsers(menusubparser, commonparser):
 
 def cmd_recon_web(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_smb(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_dns(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_ssh(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 def cmd_recon_ftp(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_nmapscan(args):
     setcurrentenvproject(args)
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
-    if args.verbose < 2:
+    if args.verbose > 2:
         print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
     subargs = parse_ip_inputs(args.targets)
-    full_discovery(subargs, args.targets)
+    full_discovery(subargs, args.verbose, args.targets)
