@@ -113,7 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # -------- shared/common options for most subtools --------
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--project", default="cwd", help="Project name to operate on. (Default asumes scrip is ran inside a rawrs.py project folder)")
+    common.add_argument("--project", default="cwd", help="Project name to operate on. (Default asumes script is ran inside a rawrs.py project folder)")
     common.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
 
     # ===================== GUI =====================
@@ -294,9 +294,9 @@ def main():
             f"{bcolors.FAIL}Due to the nature of some commands (like nmap stealth scan) this script needs to be ran as sudo{bcolors.RESET}")
         exit(10)
 
-    #Init current environment
-    # -------- Stage 1: pre-parse verbosity --------
+    # -------- pre-parse verbosity --------
     verbosity = preparse_verbose(sys.argv[1:])
+    #Init current environment
     config = load_global_config()
     init_environment(verbosity,config)
     save_global_config(config)
