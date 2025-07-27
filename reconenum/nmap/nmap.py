@@ -1,33 +1,12 @@
-import asyncio
 import datetime
 import json
 import os
 import subprocess
-from pathlib import Path
-from types import NoneType
 
 from core import context_manager
 from core.config import bcolors
 from core.context_manager import setTargets, getTargetsContext, saveTargetContext
-from core.project_manager.projects import checkdirectoryisproject
 from reconenum.parser import parse_nmap_host_discovery, parse_nmap_full_discovery
-
-def cmd_recon_fullscan(args):
-    if args.verbose < 2:
-        print(f"[recon:fullscan] targets={args.targets} overwrite={args.overwrite}")
-
-    if args.project == None or args.target == "cwd":
-        if checkdirectoryisproject("cwd"):
-            context_manager.current_project = os.getcwd()
-        else:
-            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
-            exit(1)
-    else:
-        if checkdirectoryisproject(args.project):
-            context_manager.current_project = Path(args.project)
-        else:
-            print(f"\n{bcolors.FAIL}[-] Path {args.project} is not a recognized project. Aborting{bcolors.RESET}")
-            exit(1)
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -44,7 +23,7 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
         subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False, check=True)
         target= ''.join(nmap_args[1:]).replace("/","-",1)
         # Define JSON output path
-        json_output_path =  f"./scans/nmap/json/{output_prefix}_{target}.json"
+        json_output_path =  f"{context_manager.current_project}/scans/nmap/json/{output_prefix}_{target}.json"
         try:
             os.remove(json_output_path)
         except OSError:
@@ -75,12 +54,12 @@ def run_nmap_scan(nmap_args: list, output_prefix="scan"):
 
 
 #Make host run both sylent and unsilent scans and aggregate them
-def full_discovery(ip_range : list, isOverwrite : bool, config):
+def full_discovery(ip_range : list, is_overwrite : bool):
 
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
     savedtargets = getTargetsContext()
 
-    if not savedtargets or isOverwrite:
+    if not savedtargets or is_overwrite:
         # STEP 1 – Basic Host Discovery (ping scan)
         args = ["-sn"]
         args += ip_range
@@ -107,7 +86,7 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
         for k, v in stealth_discovery_result.items():
             if k not in all_up_hosts:
                 all_up_hosts[k] = v
-        setTargets(list(all_up_hosts.keys()), isOverwrite)
+        setTargets(list(all_up_hosts.keys()), is_overwrite)
         print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
         # STEP 4 – Port scan with service detection (-sVC)

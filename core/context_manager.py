@@ -1,4 +1,9 @@
 import json
+import os
+from pathlib import Path
+
+from core.config import bcolors, GLOBAL_CONFIG_PATH
+from core.project_manager.projects import checkdirectoryisproject
 
 projects_path = ""
 current_project = "" #Current runtime project
@@ -86,3 +91,27 @@ def saveTunnelContext (tunnelCtx):
     with open(f'{current_project}/context.json', 'w') as file:
         json.dump(data, file, indent=4)  # Writing back with indentation for readability
 
+def setcurrentenvproject(args):
+    """
+    Set the current project on memory and last project on config
+    :param args:
+    :return:
+    """
+    with open(GLOBAL_CONFIG_PATH, "r") as f:
+        file_content = json.load(f)
+    global current_project
+    if args.project is None or args.project == "cwd":
+        if checkdirectoryisproject("cwd"):
+            current_project = os.getcwd()
+        else:
+            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
+            exit(1)
+    else:
+        if checkdirectoryisproject(args.project):
+            current_project = Path(args.project)
+        else:
+            print(f"\n{bcolors.FAIL}[-] Path {args.project} is not a recognized project. Aborting{bcolors.RESET}")
+            exit(1)
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    print(current_project)
+    file_content.update({"last_project": current_project})

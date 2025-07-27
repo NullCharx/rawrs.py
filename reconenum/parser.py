@@ -5,6 +5,10 @@ import os
 import re
 from pathlib import Path
 
+from core import context_manager
+from core.context_manager import current_project
+
+
 def parse_ip_inputs(input_string):
     """
     Takes a list with one element (e.g., a CIDR or comma-separated IPs)
@@ -69,11 +73,11 @@ def parse_nmap_host_discovery(json_data, scantype):
             "state": state,
             "reason": reason
         }
-    directory = Path('./scans/nmap/json')
+    directory = Path(f'{context_manager.current_project}/scans/nmap/json')
     for file_path in directory.iterdir():
         if file_path.is_file() and re.compile(rf'{scantype}*').match(file_path.name):
             file_path.unlink()
-    with open(f"./scans/nmap/json/{scantype}_aggregated.json", "w") as f:
+    with open(f"{context_manager.current_project}/scans/nmap/json/{scantype}_aggregated.json", "w") as f:
         json.dump(result, f, indent=4)
 
     return result

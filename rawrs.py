@@ -8,8 +8,9 @@ from pathlib import Path
 
 from core import context_manager
 from core.config import bcolors, load_global_config, save_global_config
+from core.context_manager import setcurrentenvproject
 from core.project_manager.projects import create_project, checkdirectoryisproject
-from reconenum.nmap.nmap import cmd_recon_fullscan
+from reconenum.reconmain import initreconenumsubparsers, cmd_recon_nmapscan
 
 splash = ["""
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⡇⠀⠀⠀⠀⠚⠉⠈⠓⣦⡀⠀⠀⠀⠀⠀⠀⡿⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀
@@ -78,39 +79,23 @@ splash = ["""
 """]
 
 
-def cmd_recon_web(args):
-    if args.verbose < 2:
-        print(f"[recon:web] project={args.project} verbose={args.verbose}")
-
-def cmd_recon_smb(args):
-    if args.verbose < 2:
-        print(f"[recon:smb] project={args.project}")
-
-def cmd_recon_dns(args):
-    if args.verbose < 2:
-        print(f"[recon:dns] project={args.project}")
-
-def cmd_recon_ssh(args):
-    if args.verbose < 2:
-        print(f"[recon:ssh] project={args.project}")
-
-def cmd_recon_ftp(args):
-    if args.verbose < 2:
-        print(f"[recon:ftp] project={args.project}")
-
 def cmd_tunnel(args):
+    setcurrentenvproject(args)
     if args.verbose < 2:
         print("[tunnel] (placeholder)")
 
 def cmd_transfer(args):
+    setcurrentenvproject(args)
     if args.verbose < 2:
         print("[transfer] (placeholder)")
 
 def cmd_osint(args):
+    setcurrentenvproject(args)
     if args.verbose < 2:
         print(f"[osint] target={args.target}")
 
 def cmd_gui(args):
+    setcurrentenvproject(args)
     if args.verbose < 2:
         print("[gui] launching... (placeholder)")
 
@@ -132,55 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
 
     # ===================== GUI =====================
-    p_gui = menusubparser.add_parser("gui", help="Launch TUI/GUI mode")
+    p_gui = menusubparser.add_parser("gui", parents=[common], help="Launch TUI/GUI mode")
     p_gui.set_defaults(func=cmd_gui)
 
-    # ===================== RECON =====================
-    p_recon = menusubparser.add_parser(
-        "recon",
-        help="Port/service scans & protocol-specific enumeration",
-        description=(
-            "Scan subtool for ports, services, and protocols.\n\n"
-            "Examples:\n"
-            "  rawrs.py recon fullscan -o 192.168.1.0/24\n"
-            "  rawrs.py recon fullscan 192.168.1.1,192.168.1.2\n"
-        ),
-        formatter_class=argparse.RawTextHelpFormatter,
-    )
-    recon_sub = p_recon.add_subparsers(dest="recon_cmd", required=True)
+    # ============ PORT / SERVICE ENUM ============
 
-    # fullscan
-    p_full = recon_sub.add_parser(
-        "fullscan",
-        parents=[common],
-        help="Host, port and service discovery (-sVC)."
-    )
-    p_full.add_argument(
-        "-o", "--overwrite",
-        action="store_true",
-        help="Overwrite previous existing targets instead of appending"
-    )
-    p_full.add_argument(
-        "targets",
-        help="IP range in CIDR or comma-separated list of IPs"
-    )
-    p_full.set_defaults(func=cmd_recon_fullscan)
-
-    # protocol submenus
-    p_web = recon_sub.add_parser("web", parents=[common], help="Web fingerprinting")
-    p_web.set_defaults(func=cmd_recon_web)
-
-    p_smb = recon_sub.add_parser("smb", parents=[common], help="SMB-specific enumeration")
-    p_smb.set_defaults(func=cmd_recon_smb)
-
-    p_dns = recon_sub.add_parser("dns", parents=[common], help="DNS analysis tools")
-    p_dns.set_defaults(func=cmd_recon_dns)
-
-    p_ssh = recon_sub.add_parser("ssh", parents=[common], help="SSH version/key gathering")
-    p_ssh.set_defaults(func=cmd_recon_ssh)
-
-    p_ftp = recon_sub.add_parser("ftp", parents=[common], help="FTP login/anon checks")
-    p_ftp.set_defaults(func=cmd_recon_ftp)
+    initreconenumsubparsers(menusubparser, common)
 
     # ===================== TUNNEL =====================
     p_tunnel = menusubparser.add_parser("tunnel", parents=[common], help="Tunneling, pivoting, proxies")

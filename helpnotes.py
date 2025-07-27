@@ -1,7 +1,7 @@
 # Manager for cli arguments (no TGUI)
 import sys
 
-from reconenum import reconenum
+from reconenum import reconmain
 
 general_help = '''
 Really Awesome Recon and Scan Tool (RAWRS)
@@ -19,18 +19,7 @@ Main subcommands:
 '''
 
 
-def mainarghelpmessage(command=None):
-    if command is None or command not in command_map:
-        print(general_help)
-        exit(2)
 
-
-command_map = {
-    "enum": reconenum.run,
-    "tunnel": print("awa"),
-    "osint": print("awaawa"),
-    # optionally add "add-host", "exit", etc.
-}
 
 a = {
     "tunnel": '''

@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+
 from core.config import bcolors
 
 """Load and save"""
@@ -11,7 +12,11 @@ required_files = ['notes.md', 'context.json']
 
 def create_project(name, config):
     """Create a project folder with default structure."""
-    project_path = Path(config["projects_dir"]) / name
+    projects_folder = Path(config["projects_dir"])
+    project_path = projects_folder / name
+    if not projects_folder.exists():
+        print(f"{bcolors.WARNING}[+] Creating projects folder {projects_folder} in this location:{bcolors.RESET}")
+        projects_folder.mkdir()
     if not project_path.exists():
         print(f"{bcolors.WARNING}[+] Creating project: {name}{bcolors.RESET}")
         project_path.mkdir()
@@ -32,12 +37,12 @@ def create_project(name, config):
         with open(project_path / "context.json", "w") as f:
             json.dump(context, f, indent=2)
     else:
-        print(f"{bcolors.FAIL}[+] Project '{name}' already exists.{bcolors.RESET}")
+        print(f"{bcolors.WARNING}[+] Project '{name}' already exists.{bcolors.RESET}")
 
 def checkdirectoryisproject(path):
     directory = ""
     if path == "cwd":
-        directory = os.getcwd()
+        directory = Path(os.getcwd())
     elif not os.path.isdir(path):
         return False
     else:
@@ -51,6 +56,7 @@ def checkdirectoryisproject(path):
             return False  # Return False if any required file is missing
 
     return True  # Return True if all project folders and files exist
+
 
 
 '''
