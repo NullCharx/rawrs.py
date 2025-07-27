@@ -1,6 +1,5 @@
-from core import context_manager
-from core.context_manager import loadProjectContextOnMemory
 from reconenum.nmap.nmap import full_discovery
+from reconenum.parser import parse_ip_inputs
 from reconenum.web.webscanner import web_scan
 
 helpmsg = '''
@@ -40,18 +39,15 @@ def run(args, config):
             del subargs[0]
             isoverwrite = True
 
-        subargs = parse_input(subargs)
+        subargs = parse_ip_inputs(subargs)
         full_discovery(subargs, isoverwrite, config)
 
 
     elif subcommand == "web":
+        tool = subargs[0]
+        del subargs[0]
+        web_scan(tool, subargs,config)
 
-        if subargs[0] == "--auto":
-            loadProjectContextOnMemory()
-            subargs = context_manager.targets
-        else:
-            subargs = parse_input(subargs)
-        web_scan(subargs, config)
     elif subcommand == "dns":
         dns_scan(subargs, config)
     elif subcommand == "smb":
@@ -66,31 +62,3 @@ def run(args, config):
 
 
 
-import ipaddress
-
-def parse_input(input_string):
-    """
-    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
-    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
-    CIDRs are expanded into all contained IPs.
-    """
-    if isinstance(input_string, str):
-        input_string = [input_string]
-
-    ips = []
-
-    for entry in input_string:
-        # Split by comma in case of comma-separated entries
-        parts = [p.strip() for p in entry.split(',') if p.strip()]
-        for part in parts:
-            #Return the CIDR
-            if '/' in part:
-                return [part]
-            else:
-                #Get the parsed list and try to parse it before adding
-                try:
-                    ip = ipaddress.ip_address(part)
-                    ips.append(str(ip))
-                except ValueError as e:
-                    raise ValueError(f"Invalid IP address '{part}': {e}")
-    return ips

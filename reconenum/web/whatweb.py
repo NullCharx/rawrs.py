@@ -3,13 +3,14 @@ import subprocess
 
 
 
-def whatwebexecutor(targets):
+def whatwebexecutor(targets) -> list:
     """
     Calls whatweb executable with given targets- It can be a single target, or a list of targets.
     The list of targets can also be the projects target context to perform the --auto whatweb scan
     :param targets: IP, list of IPS or project target context
-    :return:
+    :return: a list with the target ips and ports that were scan to parse after
     """
+    scannedlist = []
     if len(targets) > 1:
         for target in targets:
             services = targets.get(target, [])
@@ -18,23 +19,28 @@ def whatwebexecutor(targets):
                     if service.get("Service",[]) == "http" or service.get("Service",[]) == "https":
                         port=service.get("port",[])
                         try:
-                            os.remove(f"./results/whatweb/{''.join(target)}:{port}.json")
+                            os.remove(f"./scans/whatweb/{''.join(target)}:{port}.json")
                         except:
                             pass
 
+                        scannedlist.append(f"{target}:{port}")
                         status = subprocess.run(
                             ["whatweb", "-v", "-a 3", f"{target}:{port}",
-                             f"--log-json=./results/whatweb/{''.join(target)}:{port}.json"],
+                             f"--log-json=./scans/whatweb/{''.join(target)}:{port}.json"],
                             stderr=subprocess.PIPE, capture_output=False, check=True)
                         if status.stderr:
                             print(status.stderr.decode())
-                            os.remove(f"./results/whatweb/{''.join(target)}:{port}.json")
+                            os.remove(f"./scans/whatweb/{''.join(target)}:{port}.json")
             else:
+                scannedlist.append(target)
                 status=subprocess.run(
-                        ["whatweb", "-v", "-a 3", f"{target}", f"--log-json=./results/whatweb/{''.join(target)}.json"],
+                        ["whatweb", "-v", "-a 3", f"{target}", f"--log-json=./scans/whatweb/{''.join(target)}.json"],
                         stderr=subprocess.PIPE,capture_output=False, check=True)
                 if status.stderr:
                     print(status.stderr.decode())
-                    os.remove(f"./results/whatweb/{''.join(target)}.json")
+                    os.remove(f"./scans/whatweb/{''.join(target)}.json")
     else:
-        subprocess.run(["whatweb","-v","-a 3"] + targets + [f"--log-json=./results/whatweb/{''.join(targets)}.json"], capture_output=False, check=True)
+        scannedlist.append(targets[0])
+        subprocess.run(["whatweb","-v","-a 3"] + targets + [f"--log-json=./scans/whatweb/{''.join(targets)}.json"], capture_output=False, check=True)
+    return scannedlist
+

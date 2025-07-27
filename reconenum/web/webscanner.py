@@ -1,11 +1,12 @@
 import json
 
 from core import context_manager
-from core.context_manager import current_project, saveTargetContext
+from core.context_manager import current_project, saveTargetContext, loadProjectContextOnMemory
+from reconenum.parser import parse_ip_inputs, parseWebtechResults
 from reconenum.web.whatweb import whatwebexecutor
 
 
-def web_scan(subargs,config):
+def web_scan(tool,subargs,config):
     if not subargs or len(subargs) == 0:
         print('''
         Scan subtool for web gathering
@@ -28,7 +29,19 @@ def web_scan(subargs,config):
         ''')
         return
     else:
-        whatwebexecutor(subargs)
+        if tool == "fingerprint" or tool == "completescan":
+            if subargs[0] == "--auto":
+                loadProjectContextOnMemory()
+                subargs = context_manager.targets
+            else:
+                subargs = parse_ip_inputs(subargs)
+        if tool == "whatever" or tool == "completescan":
+            pass
+        scannedtargets = whatwebexecutor(subargs)
+        parseWebtechResults(scannedtargets)
+
+        # Probably a whatweb parser and add technologies and versions to the context
+        #
         # Nikto 2 (Check robots txt, source code credentials etc)
         #
         #If technologies returns wordpress -> wpscan

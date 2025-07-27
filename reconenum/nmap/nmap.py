@@ -8,7 +8,7 @@ from types import NoneType
 from core import context_manager
 from core.config import bcolors
 from core.context_manager import setTargets, getTargetsContext, saveTargetContext
-from reconenum.nmap.parser import parse_host_discovery, parse_full_discovery
+from reconenum.parser import parse_nmap_host_discovery, parse_nmap_full_discovery
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -67,7 +67,7 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
         args += ip_range
         host_discovery_results = run_nmap_scan(args, "host_discovery")
         if host_discovery_results.get("Host", []):
-            host_discovery_results = parse_host_discovery(host_discovery_results, "host_discovery")
+            host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
             print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
             print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
 
@@ -75,7 +75,7 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
         args[0] = f"-sS"
         stealth_discovery_result = run_nmap_scan(args, "stealth_discovery")
         if stealth_discovery_result.get("Host", []):
-            stealth_discovery_result = parse_host_discovery(stealth_discovery_result, "stealth_discovery")
+            stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
             print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
             print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
         elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
@@ -97,7 +97,7 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
         args = ["-sVC","-Pn"]
         args += targets
         full_scan = run_nmap_scan(args, "full_scan")
-        full_scan = parse_full_discovery(full_scan)
+        full_scan = parse_nmap_full_discovery(full_scan)
 
         #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
         extract_service_data()
@@ -107,7 +107,11 @@ def full_discovery(ip_range : list, isOverwrite : bool, config):
 
 
 def extract_service_data():
-    # Load full scan results
+    """
+    Extracts relevant service data from the full aggregated scan and writes it to a
+    separated file for easier reading.
+    :return:
+    """
     with open("./results/nmap_aggregated_scan.json", "r") as f:
         full_scan = json.load(f)
 

@@ -1,11 +1,12 @@
+import html
+import ipaddress
 import json
 import os
 import re
-from datetime import datetime
 from pathlib import Path
 
 
-def parse_host_discovery(json_data,scantype):
+def parse_nmap_host_discovery(json_data, scantype):
     """
     Parses Nmap host discovery JSON to extract info per IP.
     Returns a dict indexed by IP:
@@ -51,7 +52,8 @@ def parse_host_discovery(json_data,scantype):
 
     return result
 
-def parse_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.json"):
+
+def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.json"):
     """
     Parses Nmap formatted JSON data (from a -sVC scan) and returns a cleaned dict.
     Also writes to a JSON file with simplified structure.
@@ -151,3 +153,78 @@ def parse_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.
     os.remove("./scans/nmap/json/host_discovery_aggregated.json")
     os.remove("./scans/nmap/json/stealth_discovery_aggregated.json")
     return result
+
+
+def parse_ip_inputs(input_string):
+    """
+    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
+    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
+    CIDRs are expanded into all contained IPs.
+    """
+    if isinstance(input_string, str):
+        input_string = [input_string]
+
+    ips = []
+
+    for entry in input_string:
+        # Split by comma in case of comma-separated entries
+        parts = [p.strip() for p in entry.split(',') if p.strip()]
+        for part in parts:
+            #Return the CIDR
+            if '/' in part:
+                return [part]
+            else:
+                #Get the parsed list and try to parse it before adding
+                try:
+                    ip = ipaddress.ip_address(part)
+                    ips.append(str(ip))
+                except ValueError as e:
+                    raise ValueError(f"Invalid IP address '{part}': {e}")
+    return ips
+
+
+def parseWebtechResults(list):
+    """
+    Parse the whateb scaner results in a new easier readable and processable file
+    :param list:
+    :return:
+    """
+    results = {}
+    for target in list:
+        with open(f"./scans/whatweb/{target}.json", "r") as f:
+            data = json.load(f)
+
+        for entry in data:
+            target = entry.get("target", "unknown")
+            plugins = entry.get("plugins", {})
+
+            target_info = {}
+
+            # Extract basic information if available
+            http_server = plugins.get("HTTPServer", {}).get("string", [])
+            if http_server:
+                target_info["server"] = http_server[0]
+
+            title = plugins.get("Title", {}).get("string", [])
+            if title:
+                # Decode HTML entities
+                target_info["title"] = html.unescape(title[0])
+
+            # Example of extracting version info from server string
+            # You can extend this logic for specific parsing
+            if http_server:
+                parts = http_server[0].split()
+                if len(parts) > 1 and any(char.isdigit() for char in parts[1]):
+                    target_info["version"] = parts[1]
+
+            # Add other plugins that may have version-like info
+            for plugin_name, plugin_data in plugins.items():
+                strings = plugin_data.get("string", [])
+                if strings:
+                    target_info[plugin_name.lower()] = strings
+
+            results[target] = target_info
+    with open(f"./results/whatweb_aggregated.json", "w") as f:
+        json.dump(results, f, indent=2)
+
+    return results
