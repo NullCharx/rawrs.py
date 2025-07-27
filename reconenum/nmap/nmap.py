@@ -3,12 +3,31 @@ import datetime
 import json
 import os
 import subprocess
+from pathlib import Path
 from types import NoneType
 
 from core import context_manager
 from core.config import bcolors
 from core.context_manager import setTargets, getTargetsContext, saveTargetContext
+from core.project_manager.projects import checkdirectoryisproject
 from reconenum.parser import parse_nmap_host_discovery, parse_nmap_full_discovery
+
+def cmd_recon_fullscan(args):
+    if args.verbose < 2:
+        print(f"[recon:fullscan] targets={args.targets} overwrite={args.overwrite}")
+
+    if args.project == None or args.target == "cwd":
+        if checkdirectoryisproject("cwd"):
+            context_manager.current_project = os.getcwd()
+        else:
+            print(f"\n{bcolors.FAIL}[-] Current folder is not a recognized project. Aborting{bcolors.RESET}")
+            exit(1)
+    else:
+        if checkdirectoryisproject(args.project):
+            context_manager.current_project = Path(args.project)
+        else:
+            print(f"\n{bcolors.FAIL}[-] Path {args.project} is not a recognized project. Aborting{bcolors.RESET}")
+            exit(1)
 
 
 def run_nmap_scan(nmap_args: list, output_prefix="scan"):
@@ -138,3 +157,5 @@ def extract_service_data():
         else:
             http_services[ip] = []
         saveTargetContext(http_services)
+
+

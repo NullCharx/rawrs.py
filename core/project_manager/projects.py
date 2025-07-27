@@ -6,6 +6,8 @@ from core.config import bcolors
 """Load and save"""
 
 project_folders = ["results", "scans","tunnels"]
+required_files = ['notes.md', 'context.json']
+
 
 def create_project(name, config):
     """Create a project folder with default structure."""
@@ -32,12 +34,24 @@ def create_project(name, config):
     else:
         print(f"{bcolors.FAIL}[+] Project '{name}' already exists.{bcolors.RESET}")
 
-def checkpwdisproject():
+def checkdirectoryisproject(path):
+    directory = ""
+    if path == "cwd":
+        directory = os.getcwd()
+    elif not os.path.isdir(path):
+        return False
+    else:
+        directory = Path(path)
+    # Check if each project folder exists in the target directory
     for project in project_folders:
-        current_dir = os.getcwd()
-        if not os.path.isdir(current_dir + "/" + project):
-            return False
-    return True
+        if not (directory / project).is_dir():  # Check if project folder exists
+            return False  # Return False if any folder is missing
+    for file in required_files:
+        if not (directory / file).is_file():
+            return False  # Return False if any required file is missing
+
+    return True  # Return True if all project folders and files exist
+
 
 '''
 list_projects()
