@@ -79,39 +79,65 @@ splash = ["""
 """]
 
 
+
 def cmd_tunnel(args):
+    """
+    Handler For the tunnel commands
+    :param args: arguments to be passed to the argument subtool
+    :return:
+    """
     setcurrentenvproject(args)
     if args.verbose < 2:
         print("[tunnel] (placeholder)")
 
 def cmd_transfer(args):
+    """
+    Handler for the data transfer commands
+    :param args: arguments to be passed to the argument subtool
+    :return:
+    """
     setcurrentenvproject(args)
     if args.verbose < 2:
         print("[transfer] (placeholder)")
 
 def cmd_osint(args):
+    """
+    Handler for the osint commands
+    :param args: arguments to be passed to the osint subtool
+    :return:
+    """
     setcurrentenvproject(args)
     if args.verbose < 2:
         print(f"[osint] target={args.target}")
 
 def cmd_gui(args):
+    """
+    Handler for the Terminal UI launcher
+    :param args: arguments to be passed to the UI
+    :return:
+    """
     setcurrentenvproject(args)
     if args.verbose < 2:
         print("[gui] launching... (placeholder)")
-
-
 
 # -------------------------------------------------
 # Parser builder
 # -------------------------------------------------
 def build_parser() -> argparse.ArgumentParser:
+    """
+    Builds the main application parser as well as calling the building
+    methods for the subparsers of all the tools in a clean modular way
+    :return: The main argument parser with all the subparsers added and set
+    """
+
+    # Main parser object
     mainparser = argparse.ArgumentParser(
         prog="rawrs.py",
         description="A tool to automate repetitive recon and scanning tasks (OSCP-style).",
     )
     menusubparser = mainparser.add_subparsers(dest="command", required=True)
 
-    # -------- shared/common options for most subtools --------
+    # ========== COMMON OPTIONS FOR SUBTOOLS ==========
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--project", default="cwd", help="Path to project to operate on. (Default asumes script is ran inside a rawrs.py project folder)")
     common.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
@@ -121,7 +147,6 @@ def build_parser() -> argparse.ArgumentParser:
     p_gui.set_defaults(func=cmd_gui)
 
     # ============ PORT / SERVICE ENUM ============
-
     initreconenumsubparsers(menusubparser, common)
 
     # ===================== TUNNEL =====================
@@ -139,17 +164,34 @@ def build_parser() -> argparse.ArgumentParser:
     p_osint.set_defaults(func=cmd_osint)
 
     return mainparser
+
+
 def preparse_verbose(argv):
-    """Parse ONLY -v/--verbose before the full parser exists."""
+    """
+    Parse ONLY -v/--verbose before the full parser exists.
+    This is so the verbosity level can be used for initialization messages,
+    before the main parser is initialized
+    :param argv: all the entry arguments
+    :return: the value of the verbose option (the more "v"s the higher)
+    """
+    #Pre parser object
     pre = argparse.ArgumentParser(add_help=False)
+
+    #This will only parse the target -v argument without removing it from the arguments
+    #So it can be safely consumed by the main parser again
     pre.add_argument("-v", "--verbose", action="count", default=0)
-    # parse_known_args ignore the rest safely
     args, _ = pre.parse_known_args(argv)
     if not args.verbose:
         return 0
     return args.verbose
 
 def init_environment(verbosity,config):
+    """
+    Checks dependencies, creates the default project
+    :param verbosity:
+    :param config:
+    :return:
+    """
     if verbosity > 2:
         print(f"{bcolors.OKCYAN}Checking dependencies.{bcolors.RESET}")
     if not shutil.which("go"):
@@ -182,7 +224,7 @@ def init_environment(verbosity,config):
     except FileNotFoundError:
         print(f"{bcolors.FAIL}[!] Go is not installed or not in PATH.{bcolors.RESET}")
         exit(1)
-    context_manager.projects_path = Path(config["projects_dir"])
+    #context_manager.projects_path = Path(config["projects_dir"])
 
     #Seclists
     if not os.path.exists("/usr/share/wordlists/SecLists") and not os.path.exists("/usr/share/SecLists"):
@@ -294,16 +336,17 @@ def main():
             f"{bcolors.FAIL}Due to the nature of some commands (like nmap stealth scan) this script needs to be ran as sudo{bcolors.RESET}")
         exit(10)
 
-    # -------- pre-parse verbosity --------
+    # ========== pre-parse verbosity ==========
     verbosity = preparse_verbose(sys.argv[1:])
-    #Init current environment
+
+    # ========== Init current environment ==========
     config = load_global_config()
     init_environment(verbosity,config)
     save_global_config(config)
     print(f"\n{bcolors.OKCYAN}[+] Toolkit environment is ready.{bcolors.RESET}")
     print(f"______________________________________________________________________")
 
-    #Build supbparsers
+    # ========== Build tool subparsers and parse the input==========
     parser = build_parser()
     args = parser.parse_args(sys.argv[1:])
 
@@ -311,7 +354,7 @@ def main():
     if hasattr(args, "func"):
         return args.func(args)
     else:
-        parser.print_help()
+        return parser.print_help()
 
 
 if __name__ == "__main__":

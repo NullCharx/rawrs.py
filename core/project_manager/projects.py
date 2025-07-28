@@ -4,20 +4,27 @@ from pathlib import Path
 
 from core.config import bcolors
 
-"""Load and save"""
-
+# Required base folders and files for the project
 project_folders = ["results", "scans","tunnels"]
 required_files = ['notes.md', 'context.json']
 
 
 def create_project(name, verbosity, config):
-    """Create a project folder with default structure."""
+    """
+    Create a project folder with default structure
+    :param name: name of the project
+    :param verbosity: verbosity level
+    :param config: global config data
+    :return:
+    """
     projects_folder = Path(config["projects_dir"])
     project_path = projects_folder / name
+    #If a projects folder doeesnt exist in the current location, create it by default
     if not projects_folder.exists():
         if verbosity > 2:
             print(f"{bcolors.WARNING}[+] Creating projects folder {projects_folder} in this location:{bcolors.RESET}")
         projects_folder.mkdir()
+    #and if the project folder with the specified name doesnt exist, create it as well
     if not project_path.exists():
         if verbosity > 2:
             print(f"{bcolors.WARNING}[+] Creating project: {name}{bcolors.RESET}")
@@ -28,7 +35,7 @@ def create_project(name, verbosity, config):
                 (project_path / folder / "nmap").mkdir()
                 (project_path / folder / "nmap"/"xml").mkdir()
                 (project_path / folder / "nmap"/"json").mkdir()
-                (project_path / folder / "whatweb").mkdir()
+                (project_path / folder / "webtech").mkdir()
 
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
@@ -39,10 +46,16 @@ def create_project(name, verbosity, config):
         with open(project_path / "context.json", "w") as f:
             json.dump(context, f, indent=2)
     else:
+        #Do nothing
         if verbosity > 2:
             print(f"{bcolors.WARNING}[+] Project '{name}' already exists.{bcolors.RESET}")
 
-def checkdirectoryisproject(path):
+def checkdirectoryisproject(path) -> bool:
+    """
+    Check if a given path is a rawrs.py folder
+    :param path: path to check, including "cwd" to check the current directory
+    :return:
+    """
     directory = ""
     if path == "cwd":
         directory = Path(os.getcwd())
@@ -66,10 +79,4 @@ def checkdirectoryisproject(path):
 list_projects()
 
 delete_project(name)
-
-load_context(project_name) (loads the volatile data that needs to be on memory like targets, scans, tunnels...)
-
-save_context(project_name, context) (Saves the volatile data that needs to be on memory like targets, scans, tunnels...)
-
-switch_project(name)
 '''

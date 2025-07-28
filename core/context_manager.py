@@ -5,14 +5,14 @@ from pathlib import Path
 from core.config import bcolors, GLOBAL_CONFIG_PATH
 from core.project_manager.projects import checkdirectoryisproject
 
-projects_path = ""
-current_project = "" #Current runtime project
+#Manager for session - volatile data, such as targets, for each project.
+#THe context is saved so that consectuive runs of commands dont redo everything
 
+#projects_path = ""
+current_project = "" #Current runtime project
 
 targets = []
 tunnels = []
-
-
 
 def loadProjectContextOnMemory ():
     """
@@ -51,8 +51,9 @@ def getTunnelsContext ():
 def setTargets(listoftargets : list, overwrite : bool = False):
     """
     Save to both ctx file and memory of the current project the targets given
-    listoftargets: list of targets
-    overwrite: whether to overwrite targets or add the list to the already existing (removing duplicates)
+    :param listoftargets: list of targets
+    :param overwrite: whether to overwrite targets or add the list to the already existing (removing duplicates)
+    :return:
     """
     if overwrite:
         saveTargetContext(listoftargets) #Overwrite

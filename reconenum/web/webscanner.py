@@ -1,12 +1,32 @@
 import json
 
 from core import context_manager
-from core.context_manager import current_project, saveTargetContext, loadProjectContextOnMemory
+from core.context_manager import current_project, saveTargetContext, loadProjectContextOnMemory, setcurrentenvproject
 from reconenum.parser import parse_ip_inputs, parse_whatweb_results, parse_web_targets
 from reconenum.web.whatweb import whatwebexecutor
 
 
+def  cmd_recon_web(args):
+    """
+    Perform an analysis on any web enabled port on the given IP targets
+    :param args: args that include the IP or host targets or a flag to perform it on the nmap scanned targets, if any
+    :return:
+    """
+    setcurrentenvproject(args)
+    if args.verbose > 2:
+        print(f"[recon:web] project={args.project} verbose={args.verbose}")
+    subargs = parse_ip_inputs(args.targets)
+
+
+def initwebscanparser(recon_sub,commonparser):
+
+    p_web = recon_sub.add_parser("web", parents=[commonparser], help="Web fingerprinting")
+    p_web.set_defaults(func=cmd_recon_web)
+
+
+
 def web_scan(tool,subargs,config):
+    #Bring the web vuln scan subparser here
     if not subargs or len(subargs) == 0:
         print('''
         Scan subtool for web gathering

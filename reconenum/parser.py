@@ -6,9 +6,10 @@ import re
 from pathlib import Path
 
 from core import context_manager
-from core.context_manager import current_project
 
-
+"""
+Parsing of any arguments or command output of any of the subtools go in this file
+"""
 def parse_ip_inputs(input_string):
     """
     Takes a list with one element (e.g., a CIDR or comma-separated IPs)
@@ -192,10 +193,14 @@ def parse_web_targets(targets) -> list:
     if len(targets) > 1:
         for target in targets:
             services = targets.get(target, [])
+            #If the list is a dict of nmap targets, read which targets have ports identified as web (http or https)
+            #Otherwise assume its the default ports or that the target alrady has the port or protocol specified.
             if services:
                 for service in services:
                     if service.get("Service",[]) == "http" or service.get("Service",[]) == "https":
                         port=service.get("port",[])
+                        scannedlist.append(f"{target}:{port}")
+
             else:
                 scannedlist.append(target)
     else:

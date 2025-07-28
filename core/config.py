@@ -2,6 +2,7 @@ import json
 import platform
 from pathlib import Path
 
+# Globally used elements such ass terminal colors, config info and config path
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -15,8 +16,6 @@ class bcolors:
     RESET = '\033[0m'
     YELLOW = '\033[33m'
     GRAY = '\033[38;5;235m'
-
-
 GLOBAL_CONFIG_PATH = Path(f"{Path(__file__).resolve().parent.parent}/config.json")
 DEFAULT_CONFIG = {
     "os": platform.system(),
@@ -27,7 +26,10 @@ DEFAULT_CONFIG = {
 }
 
 def load_global_config():
-    """Load the global config file or create one if not eisting"""
+    """
+    Load the global config file or create one if not eisting
+    :return: The global config file contents or the default config data if not existent
+    """
     if GLOBAL_CONFIG_PATH.exists():
         with open(GLOBAL_CONFIG_PATH, "r") as f:
             return json.load(f)
@@ -37,6 +39,10 @@ def load_global_config():
         return DEFAULT_CONFIG
 
 def save_global_config(config):
-    """Save current global config to file"""
+    """
+    Save global config currently stored in memory in the config file
+    :param config: Configuration data to save
+    :return:
+    """
     with open(GLOBAL_CONFIG_PATH, "w") as f:
         json.dump(config, f, indent=2)

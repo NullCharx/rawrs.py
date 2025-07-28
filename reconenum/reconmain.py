@@ -3,10 +3,16 @@ import argparse
 from core.context_manager import setcurrentenvproject
 from reconenum.nmap.nmap import full_discovery
 from reconenum.parser import parse_ip_inputs
+from reconenum.web.webscanner import initwebscanparser
 
 
 def initreconenumsubparsers(menusubparser, commonparser):
-    # ===================== RECON =====================
+    """
+    Parsers for the reconsubtool
+    :param menusubparser: The main subparser
+    :param commonparser:  The parser with the common options (project, verbosity)
+    :return:
+    """
     p_recon = menusubparser.add_parser(
         "recon",
         help="Port/service scans & protocol-specific enumeration",
@@ -38,8 +44,7 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_full.set_defaults(func=cmd_recon_nmapscan)
 
     # protocol submenus
-    p_web = recon_sub.add_parser("web", parents=[commonparser], help="Web fingerprinting")
-    p_web.set_defaults(func=cmd_recon_web)
+    initwebscanparser(recon_sub, commonparser)
 
     p_smb = recon_sub.add_parser("smb", parents=[commonparser], help="SMB-specific enumeration")
     p_smb.set_defaults(func=cmd_recon_smb)
@@ -54,6 +59,11 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_ftp.set_defaults(func=cmd_recon_ftp)
 
 def cmd_recon_nmapscan(args):
+    """
+    Performs a full nmap scan and saves the results to context on the the IPs specified on range
+    :param args: args that include the IP or host targets
+    :return:
+    """
     setcurrentenvproject(args)
 
     if args.verbose > 2:
@@ -61,12 +71,6 @@ def cmd_recon_nmapscan(args):
     subargs = parse_ip_inputs(args.targets)
     full_discovery(subargs, args.verbose, args.targets)
 
-def  cmd_recon_web(args):
-    setcurrentenvproject(args)
-
-    if args.verbose > 2:
-        print(f"[recon:web] project={args.project} verbose={args.verbose}")
-    subargs = parse_ip_inputs(args.targets)
 
 
 def cmd_recon_smb(args):
