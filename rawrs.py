@@ -113,7 +113,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # -------- shared/common options for most subtools --------
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--project", default="cwd", help="Project name to operate on. (Default asumes script is ran inside a rawrs.py project folder)")
+    common.add_argument("--project", default="cwd", help="Path to project to operate on. (Default asumes script is ran inside a rawrs.py project folder)")
     common.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
 
     # ===================== GUI =====================

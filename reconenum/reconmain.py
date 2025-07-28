@@ -24,16 +24,16 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_full = recon_sub.add_parser(
         "nmapscan",
         parents=[commonparser],
-        help="Host, port and service discovery (-sVC)."
+        help="Host, port and service discovery (-sVC). For single IP or list / CIDR via normal and stealth scan"
     )
     p_full.add_argument(
         "-o", "--overwrite",
         action="store_true",
-        help="Overwrite previous existing targets instead of appending"
+        help="Overwrite targets from previous scans on the same project. (Default appends any new IP to the list of targets)"
     )
     p_full.add_argument(
         "targets",
-        help="IP range in CIDR or comma-separated list of IPs"
+        help="single IP or IP range in CIDR or comma-separated list of IPs"
     )
     p_full.set_defaults(func=cmd_recon_nmapscan)
 
@@ -53,11 +53,20 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_ftp = recon_sub.add_parser("ftp", parents=[commonparser], help="FTP login/anon checks")
     p_ftp.set_defaults(func=cmd_recon_ftp)
 
-
-def cmd_recon_web(args):
+def cmd_recon_nmapscan(args):
     setcurrentenvproject(args)
+
+    if args.verbose > 2:
+        print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
+    subargs = parse_ip_inputs(args.targets)
+    full_discovery(subargs, args.verbose, args.targets)
+
+def  cmd_recon_web(args):
+    setcurrentenvproject(args)
+
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
+    subargs = parse_ip_inputs(args.targets)
 
 
 def cmd_recon_smb(args):
@@ -81,14 +90,3 @@ def cmd_recon_ftp(args):
     setcurrentenvproject(args)
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
-
-
-def cmd_recon_nmapscan(args):
-    setcurrentenvproject(args)
-    if args.verbose > 2:
-        print(f"[recon:web] project={args.project} verbose={args.verbose}")
-
-    if args.verbose > 2:
-        print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
-    subargs = parse_ip_inputs(args.targets)
-    full_discovery(subargs, args.verbose, args.targets)
