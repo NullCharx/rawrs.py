@@ -1,70 +1,61 @@
-import json
+from urllib.parse import urlparse
 
-from core import context_manager
-from core.context_manager import current_project, saveTargetContext, loadProjectContextOnMemory, setcurrentenvproject
-from reconenum.parser import parse_ip_inputs, parse_whatweb_results, parse_web_targets
+from core.context_manager import setcurrentenvproject, getTargetsContext
+from reconenum.parser import parse_ip_inputs, target_web_parser
 from reconenum.web.whatweb import whatwebexecutor
 
 
+# whatweb and wappalizer should be aggregated together. Then wappity, then recursive fuzzing, then vulns
+
 def  cmd_recon_web(args):
     """
-    Perform an analysis on any web enabled port on the given IP targets
+    Perform a full analysis on
     :param args: args that include the IP or host targets or a flag to perform it on the nmap scanned targets, if any
     :return:
     """
     setcurrentenvproject(args)
     if args.verbose > 2:
-        print(f"[recon:web] project={args.project} verbose={args.verbose}")
+        print(f"[recon:web full] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets)
+    print("YOHOOO ALL SUMMER BLOW OUT")
 
-
-def initwebscanparser(recon_sub,commonparser):
-
-    p_web = recon_sub.add_parser("web", parents=[commonparser], help="Web fingerprinting")
-    p_web.set_defaults(func=cmd_recon_web)
-
-
-
-def web_scan(tool,subargs,config):
-    #Bring the web vuln scan subparser here
-    if not subargs or len(subargs) == 0:
-        print('''
-        Scan subtool for web gathering
-
-          rawrs.py enum web [TOOL] [ARGUMENTS] <options>
-          
-          [TOOL] can be:
-          completescan                              Run all available tools to perform a complete web scan of the targets
-          fingerprint                               Run whatweb on the targets to enumeate technologies used
-        
-          [ARGUMENT] can be either an ip, list of IPs or CIDR or one of the following:
-          --auto                                     Use the IPs gathered on a enum fullscan run if there are any, else error.
-        
-        
-        Examples:
-          rawrs.py reconenum web fingerprint --auto             web fingerprinting of the IPs gathered during a fullscan. THis will detect services marked as "http" or "https" and launch whatweb with the corresponding port
-          rawrs.py reconenum web fingerprint 192.168.1.1        web fingerprinting of 192.168.1.1
-          rawrs.py reconenum web fingerprint 192.168.1.1:44     web fingerprinting of 192.168.1.1 specifying an uncommon port
-
-        ''')
-        return
+def what_wapp_fingerprint(args):
+    """
+    Perform target fingerprinting with whatweb and wappalizer
+    :param args: args that include the IP or host targets or a flag to perform it on the nmap scanned targets, if any
+    :return:
+    """
+    setcurrentenvproject(args)
+    if args.verbose > 2:
+        print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
+    if args.auto:
+        subargs = getTargetsContext()
     else:
-        argument = None
-        if subargs[-1].startswith("--") or subargs[0].startswith("-"):
-            argument = subargs[0]
-            del subargs[0]
+        subargs = parse_ip_inputs(args.targets) #Get target arg
+    parsedtargets = target_web_parser(subargs) #Parse web enabled targets
+    whatwebexecutor(parsedtargets) #Whatweb
+    #wappalizer
+    #aggregate results
 
-        if tool == "fingerprint" or tool == "completescan":
-            if argument and argument == "--auto":
-                loadProjectContextOnMemory()
-                subargs = context_manager.targets
-            else:
-                subargs = parse_ip_inputs(subargs)
-            parse_web_targets(subargs)
-            whatwebexecutor(subargs)
+def initwebscanargparser(recon_sub, commonparser):
+    # Main "web" command parser
+    p_web = recon_sub.add_parser("web", parents=[commonparser], help="Web fingerprinting and vulnerability scan tools")
+    web_subparsers = p_web.add_subparsers(dest="tool", metavar="[TOOL]", required=True)
 
-        if tool == "whatever" or tool == "completescan":
-            pass
+    # completescan: run all tools
+    p_complete = web_subparsers.add_parser("completescan", parents=[commonparser], help="Run all available tools to perform a complete web scan of the targets")
+    p_complete.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
+    p_complete.set_defaults(tool=cmd_recon_web)
+    p_complete.add_argument("--auto", action="store_true", help="Use IPs from the project nmap scanned targets, if any")
+
+    # fingerprint: run whatweb (and possibly Wappalyzer)
+    p_fingerprint = web_subparsers.add_parser("fingerprint", parents=[commonparser], help="Run whatweb to fingerprint web technologies")
+    p_fingerprint.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
+    p_fingerprint.set_defaults(func=what_wapp_fingerprint)
+    p_fingerprint.add_argument("--auto", action="store_true", help="Use IPs from the project nmap scanned targets, if any")
+
+
+
 
         # Probably a whatweb parser and add technologies and versions to the context
         #

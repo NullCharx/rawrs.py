@@ -3,7 +3,7 @@ import argparse
 from core.context_manager import setcurrentenvproject
 from reconenum.nmap.nmap import full_discovery
 from reconenum.parser import parse_ip_inputs
-from reconenum.web.webscanner import initwebscanparser
+from reconenum.web.webscanner import initwebscanargparser
 
 
 def initreconenumsubparsers(menusubparser, commonparser):
@@ -44,7 +44,7 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_full.set_defaults(func=cmd_recon_nmapscan)
 
     # protocol submenus
-    initwebscanparser(recon_sub, commonparser)
+    initwebscanargparser(recon_sub, commonparser)
 
     p_smb = recon_sub.add_parser("smb", parents=[commonparser], help="SMB-specific enumeration")
     p_smb.set_defaults(func=cmd_recon_smb)
@@ -58,7 +58,8 @@ def initreconenumsubparsers(menusubparser, commonparser):
     p_ftp = recon_sub.add_parser("ftp", parents=[commonparser], help="FTP login/anon checks")
     p_ftp.set_defaults(func=cmd_recon_ftp)
 
-def cmd_recon_nmapscan(args):
+def \
+        cmd_recon_nmapscan(args):
     """
     Performs a full nmap scan and saves the results to context on the the IPs specified on range
     :param args: args that include the IP or host targets

@@ -4,6 +4,7 @@ import json
 import os
 import re
 from pathlib import Path
+from urllib.parse import urlparse
 
 from core import context_manager
 
@@ -184,30 +185,10 @@ def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_
     os.remove(f"{context_manager.current_project}/scans/nmap/json/stealth_discovery_aggregated.json")
     return result
 
-def parse_web_targets(targets) -> list:
-    """
-    Parses the list of a scan to get web enabled targets
-    :return:
-    """
-    scannedlist = []
-    if len(targets) > 1:
-        for target in targets:
-            services = targets.get(target, [])
-            #If the list is a dict of nmap targets, read which targets have ports identified as web (http or https)
-            #Otherwise assume its the default ports or that the target alrady has the port or protocol specified.
-            if services:
-                for service in services:
-                    if service.get("Service",[]) == "http" or service.get("Service",[]) == "https":
-                        port=service.get("port",[])
-                        scannedlist.append(f"{target}:{port}")
 
-            else:
-                scannedlist.append(target)
-    else:
-        scannedlist = targets
-    return scannedlist
 
 def parse_whatweb_results(list):
+    #TODO need to wappalizer and then parse everything together here...nn
     """
     Parse the whateb scaner results in a new easier readable and processable file
     :param list:
@@ -217,7 +198,6 @@ def parse_whatweb_results(list):
     for target in list:
         with open(f"./scans/whatweb/{target}.json", "r") as f:
             data = json.load(f)
-
         for entry in data:
             target = entry.get("target", "unknown")
             plugins = entry.get("plugins", {})
@@ -251,3 +231,52 @@ def parse_whatweb_results(list):
         json.dump(results, f, indent=2)
 
     return results
+
+
+def target_web_parser(targets):
+    """Given a target list or project context target dict,
+    compute which targets are web-ennabled.
+    In the case of CIDR, single or list of IPs, these are assumed to either
+    have the port or protocol specified (IP:PORT) or (PROTOCOL://IP)
+    or will have the http or https protocol autoprepended
+    """
+    scannedlist = []
+    if len(targets) > 1:
+        for target in targets:
+            services = targets.get(target, [])
+            if services: # rawrs.py context data. Check service, then the port of said service
+                for service in services:
+                    if service.get("Service", []) == "http" or service.get("Service", []) == "https":
+                        port = service.get("port", [])
+                        scannedlist.append(f"{target}:{port}")
+            else:
+                #Regular ip list. Parse each one. If not correct, the list will be empty and nothing will be added
+                scannedlist += parse_web_port_or_scheme(target)
+    else:
+        #only one target
+        scannedlist += parse_web_port_or_scheme(targets[0])
+    return scannedlist
+
+def parse_web_port_or_scheme(url) -> list:
+    """
+    Check if a target ip (url) has a scheme or port usable for web analysis. If not its not
+    valid or assume that the target will correctly process an http or https petition
+    :param url:
+    :return:
+    """
+    parsecheck = urlparse(url)
+
+    if parsecheck.scheme:
+        if parsecheck.scheme == "http" or parsecheck.scheme == "https":
+            return [url]
+        else:
+            #if any other scheme was present, not suitable for web analysis
+            return []
+    else:
+        burl = "bogus://" + url
+        burlparse=urlparse(burl)
+        if burlparse.port:
+            return [url]
+        else:
+            #If no scheme and no port, default to check both normal and secure default http ports
+            return ["http://" + url, "https://" + url]
