@@ -1,9 +1,9 @@
 import os
 import subprocess
-
 from core import context_manager
 
 
+#use system program instead pf pythonas its very linted
 #make the web target parser, call it from outside here and pass it in to every web method
 def whatwebexecutor(targets):
     """

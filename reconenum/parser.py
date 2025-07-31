@@ -211,7 +211,8 @@ def parse_whatweb_results(list):
     """
     results = {}
     for target in list:
-        with open(f"./scans/whatweb/{target}.json", "r") as f:
+        #TOMORROW: TEst la salida teh whatwebexexutor, because this errors
+        with open(f" {context_manager.current_project}/scans/webtech/whatweb_{target}.json", "r") as f:
             data = json.load(f)
         for entry in data:
             target = entry.get("target", "unknown")
@@ -242,12 +243,12 @@ def parse_whatweb_results(list):
                     target_info[plugin_name.lower()] = strings
 
             results[target] = target_info
-    with open(f"./results/whatweb_aggregated.json", "w") as f:
-        json.dump(results, f, indent=2)
+    with open(f"{context_manager.current_project}/results/whatweb_aggregated.json", "w") as f:
+        json.dump(results, f, indent=4)
 
     return results
 
-def target_web_parser(targets):
+def target_web_sorter(targets):
     """Given a target list or project context target dict,
     compute which targets are web-ennabled.
     In the case of CIDR, single or list of IPs, these are assumed to either
