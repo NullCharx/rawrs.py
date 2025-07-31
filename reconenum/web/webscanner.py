@@ -29,6 +29,7 @@ def what_wapp_fingerprint(args):
     """
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
+    print(args)
 
     if args.verbose > 2:
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
@@ -36,7 +37,8 @@ def what_wapp_fingerprint(args):
     parsedtargets = target_web_sorter(subargs) #Parse web enabled targets
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedtargets}")
-    whatwebexecutor(parsedtargets) #Whatweb
+    whatwebexecutor(parsedtargets)
+    #Whatweb
     finalwhatweb = parse_whatweb_results(parsedtargets)
 
     #wappalizer

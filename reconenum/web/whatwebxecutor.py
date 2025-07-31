@@ -17,18 +17,29 @@ def whatwebexecutor(targets):
     """
     if len(targets) > 1:
         for target in targets:
+            target = ''.join(target)
+            safestring = ""
+            if "http" in target:
+                safestring = "http:" + target[8:]
+            elif "https" in target:
+                safestring = "https:" + target[8:]
+            else:
+                safestring = target
+
             try:
-                with open(f"{context_manager.current_project}/scans/webtech/whatweb_{''.join(targets[0])}.json", 'x') as file:
+                with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", 'w') as file:
                     file.write("")
             except FileExistsError:
                 pass
+
             status = subprocess.run(
                 ["whatweb", "-v", "-a 3", f"{target}",
-                 f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{''.join(targets[0])}.json"],
+                 f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{safestring}.json"],
                 stderr=subprocess.PIPE, capture_output=False, check=True)
             if status.stderr:
                 print(status.stderr.decode())
-                os.remove(f"{context_manager.current_project}/scans/webtech/whatweb_{''.join(targets[0])}.json")
+                os.remove(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json")
+                targets.remove(target)
     else:
         status = subprocess.run(["whatweb", "-v", "-a 3"] + targets + [
             f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{''.join(targets[0])}.json"],

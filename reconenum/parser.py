@@ -211,9 +211,20 @@ def parse_whatweb_results(list):
     """
     results = {}
     for target in list:
-        #TOMORROW: TEst la salida teh whatwebexexutor, because this errors
-        with open(f" {context_manager.current_project}/scans/webtech/whatweb_{target}.json", "r") as f:
-            data = json.load(f)
+        #TOMORROW: TEst la salida teh whatwebexexutor, because this errors man idk check it tomorrow or something
+        safestring = ""
+        if "http" in target:
+            safestring = "http:" + target[8:]
+        elif "https" in target:
+            safestring = "https:" + target[8:]
+        else:
+            safestring = target
+
+        try:
+            with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", "r") as f:
+                data = json.load(f)
+        except FileExistsError:
+            pass
         for entry in data:
             target = entry.get("target", "unknown")
             plugins = entry.get("plugins", {})
