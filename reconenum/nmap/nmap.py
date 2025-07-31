@@ -92,7 +92,8 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
     for k, v in stealth_discovery_result.items():
         if k not in all_up_hosts:
             all_up_hosts[k] = v
-    setTargets(list(all_up_hosts.keys()), is_overwrite)
+
+    setTargets(all_up_hosts,is_overwrite)
     print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
     # STEP 4 – Port scan with service detection (-sVC)
@@ -101,25 +102,23 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
     args = ["-sVC","-Pn"]
     args += targets
     full_scan = run_nmap_scan(args, verbose,"full_scan")
-    full_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
+    aggregated_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
 
     #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
-    extract_service_data()
+    extract_service_data(aggregated_scan)
 
     if is_overwrite and verbose > 1:
-        print(f"\n{bcolors.OKCYAN}[✔] Using saved targets.{bcolors.RESET}\n\n")
+        print(f"\n{bcolors.OKCYAN}[✔] Merging with saved targets.{bcolors.RESET}\n\n")
     print(f"\n{bcolors.OKGREEN}[✔] Full discovery completed.{bcolors.RESET}\n\n")
 
 
-def extract_service_data():
+def extract_service_data(aggregated_scan):
     """
-    Extracts relevant service data from the full aggregated scan and writes it to a
-    separated file for easier reading.
+    Extracts relevant service data from the full aggregated scan and writes it to the context file for
+    easier access
+    :param:aggregated_scan: the output of the parse_nmap_full_discovery to be saved to context
     :return:
     """
-    with open(f"{context_manager.current_project}/results/nmap_aggregated_scan.json", "r") as f:
-        full_scan = json.load(f)
-
     global current_project
     # Load context with plain IPs
     with open(f"{context_manager.current_project}/context.json", "r") as f:
@@ -130,7 +129,7 @@ def extract_service_data():
     for ip in targets:
 
         services = []
-        ports = full_scan[ip].get("ports", [])
+        ports = aggregated_scan[ip].get("ports", [])
         if ports:
             for port in ports:
                 service_name = port.get("service", {}).get("name", "")

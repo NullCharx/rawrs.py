@@ -181,8 +181,6 @@ def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
 
                 result[ip]["ports"].append(port_info)
 
-    print("BABABAB")
-    print(output_path)
     with open(output_path, "w") as f:
         json.dump(result, f, indent=4)
 

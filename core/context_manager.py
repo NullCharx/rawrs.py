@@ -48,17 +48,19 @@ def getTunnelsContext ():
             data = json.load(file)  # Parse the JSON file into a Python dictionary
         tunnels = data['tunnels']
 
-def setTargets(listoftargets : list, overwrite : bool = False):
+def setTargets(listoftargets : dict, overwrite : bool = False):
     """
     Save to both ctx file and memory of the current project the targets given
     :param listoftargets: list of targets
     :param overwrite: whether to overwrite targets or add the list to the already existing (removing duplicates)
     :return:
     """
+    savedtargetlist = list(targets.keys())
+    writtentargetlsit = list(listoftargets.keys())
     if overwrite:
-        saveTargetContext(listoftargets) #Overwrite
+        saveTargetContext(writtentargetlsit) #Overwrite
     else:
-        saveTargetContext(list(set(targets + listoftargets)))  # Combine and remove duplicates
+        saveTargetContext(list(set(savedtargetlist + writtentargetlsit)))  # Combine and remove duplicates
 
 def saveTargetContext (targetCtx):
     """
