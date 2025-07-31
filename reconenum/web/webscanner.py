@@ -33,7 +33,7 @@ def what_wapp_fingerprint(args):
     else:
         subargs = parse_ip_inputs(args.targets) #Get target arg
     parsedtargets = target_web_parser(subargs) #Parse web enabled targets
-    whatwebexecutor(parsedtargets) #Whatweb
+    whatwebresults = whatwebexecutor(parsedtargets) #Whatweb
     #wappalizer
     #aggregate results
 

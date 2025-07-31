@@ -13,12 +13,14 @@ from core.context_manager import getTargetsContext
 """
 Parsing of any arguments or command output of any of the subtools go in this file
 """
-def parse_ip_inputs(input_string):
+def parse_ip_inputs(input_string, isauto : bool = False):
     """
     Takes a list with one element (e.g., a CIDR or comma-separated IPs)
     or multiple elements (e.g., plain IP strings), and returns a list of IPs.
     CIDRs are expanded into all contained IPs.
     """
+
+
     if isinstance(input_string, str):
         input_string = [input_string]
 
@@ -85,7 +87,6 @@ def parse_nmap_host_discovery(json_data, scantype):
         json.dump(result, f, indent=4)
 
     return result
-
 
 def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
     """
@@ -193,7 +194,6 @@ def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
 
     return result
 
-
 def parse_whatweb_results(list):
     #TODO need to wappalizer and then parse everything together here...nn
     """
@@ -238,7 +238,6 @@ def parse_whatweb_results(list):
         json.dump(results, f, indent=2)
 
     return results
-
 
 def target_web_parser(targets):
     """Given a target list or project context target dict,
