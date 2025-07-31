@@ -4,9 +4,11 @@ import json
 import os
 import re
 from pathlib import Path
+from tabnanny import verbose
 from urllib.parse import urlparse
 
 from core import context_manager
+from core.context_manager import getTargetsContext
 
 """
 Parsing of any arguments or command output of any of the subtools go in this file
@@ -84,39 +86,37 @@ def parse_nmap_host_discovery(json_data, scantype):
 
     return result
 
-def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_scan.json"):
+
+def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
     """
     Parses Nmap formatted JSON data (from a -sVC scan) and returns a cleaned dict.
     Also writes to a JSON file with simplified structure.
 
+    If overwrite=False, merges new hosts into existing results.
+
     Output format:
     {
-        "ip:192.168.1.1": {
+        "192.168.1.1": {
             "hostname": "host.local",
             "ports": [
-                {
-                    "port": "80",
-                    "protocol": "tcp",
-                    "state": "open",
-                    "reason": "syn-ack",
-                    "service": {
-                        "name": "http",
-                        "product": "Apache httpd",
-                        "version": "2.4.41",
-                        "extrainfo": "Ubuntu",
-                        ...
-                    },
-                    "scripts": [
-                        {"id": "vuln", "output": "..."}
-                    ]
-                },
                 ...
             ]
         },
         ...
     }
     """
-    result = {}
+    if not output_path:
+        output_path = f"{context_manager.current_project}/results/nmap_aggregated_scan.json"
+
+
+    if not overwrite:
+        if os.path.exists(output_path):
+            with open(output_path, "r") as f:
+                result = json.load(f)
+        else:
+            result = {}
+    else:
+        result = {}
 
     for host in json_data.get("Host", []):
         ip = None
@@ -131,21 +131,25 @@ def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_
         if not ip:
             continue
 
+        # Skip if host already exists and not overwriting
+        if not overwrite and ip in result:
+            if verbose >0:
+                print(f"[+] Target {ip} skipped; ALready present on previous file")
+            continue
+
         # Get hostname (PTR or otherwise)
         for hn in host.get("HostNames", {}).get("HostName", []):
             if hn.get("Name") != ip:
                 hostname = hn.get("Name")
                 break
 
-        key = f"{ip}"
-        result[key] = {
+        result[ip] = {
             "hostname": hostname,
             "ports": []
         }
-
         ports = host.get("Port", [])
         if ports:
-            for port in ports :
+            for port in ports:
                 port_info = {
                     "port": port.get("PortID"),
                     "protocol": port.get("Protocol"),
@@ -155,7 +159,7 @@ def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_
                     "scripts": []
                 }
 
-                service = port.get("Service",[])
+                service = port.get("Service", {})
                 if service:
                     port_info["service"] = {
                         "name": service.get("Name"),
@@ -167,24 +171,29 @@ def parse_nmap_full_discovery(json_data, output_path="./results/nmap_aggregated_
                         "cpe": service.get("CPE")
                     }
 
-                    scripts = port.get("Script", [])
-                    if scripts:
-                        for script in scripts:
-                            port_info["scripts"].append({
-                                "id": script.get("ID"),
-                                "output": script.get("Output")
-                            })
+                scripts = port.get("Script", [])
+                if scripts:
+                    for script in scripts:
+                        port_info["scripts"].append({
+                            "id": script.get("ID"),
+                            "output": script.get("Output")
+                        })
 
-                result[key]["ports"].append(port_info)
+                result[ip]["ports"].append(port_info)
 
-    # Save the cleaned results
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    print("BABABAB")
+    print(output_path)
     with open(output_path, "w") as f:
         json.dump(result, f, indent=4)
-    os.remove(f"{context_manager.current_project}/scans/nmap/json/host_discovery_aggregated.json")
-    os.remove(f"{context_manager.current_project}/scans/nmap/json/stealth_discovery_aggregated.json")
-    return result
 
+    # Cleanup temp scan files
+    try:
+        os.remove(f"{context_manager.current_project}/scans/nmap/json/host_discovery_aggregated.json")
+        os.remove(f"{context_manager.current_project}/scans/nmap/json/stealth_discovery_aggregated.json")
+    except FileNotFoundError:
+        pass
+
+    return result
 
 
 def parse_whatweb_results(list):

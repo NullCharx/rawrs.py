@@ -54,60 +54,59 @@ def run_nmap_scan(nmap_args: list, verbose : int, output_prefix="scan"):
 
 
 
-#Make host run both sylent and unsilent scans and aggregate them
 def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
 
 
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
     savedtargets = getTargetsContext()
 
-    if not savedtargets or is_overwrite:
-        # STEP 1 – Basic Host Discovery (ping scan)
-        print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
-        args = ["-sn"]
-        args += ip_range
-        host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
-        if host_discovery_results.get("Host", []):
-            host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
-            if verbose > 0:
+    # STEP 1 – Basic Host Discovery (ping scan)
+    print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
+    args = ["-sn"]
+    args += ip_range
+    host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
+    if host_discovery_results.get("Host", []):
+        host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
+        if verbose > 0:
 
-                print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
-                print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
+            print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
+            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
 
-        # STEP 2 – Additional discovery for stealthy or filtered hosts
-        args[0] = f"-sS"
-        print(f"{bcolors.OKCYAN}[+] Discovering quiet hosts (stealth)...")
-        stealth_discovery_result = run_nmap_scan(args, verbose,"stealth_discovery")
-        if stealth_discovery_result.get("Host", []):
-            stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
-            if verbose > 0:
+    # STEP 2 – Additional discovery for stealthy or filtered hosts
+    args[0] = f"-sS"
+    print(f"{bcolors.OKCYAN}[+] Discovering quiet hosts (stealth)...")
+    stealth_discovery_result = run_nmap_scan(args, verbose,"stealth_discovery")
+    if stealth_discovery_result.get("Host", []):
+        stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
+        if verbose > 0:
 
-                print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
-                print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
-        elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
-            print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
-            print(f"---------------------------------{bcolors.RESET}\n")
-            exit(3)
+            print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
+            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
+    elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
+        print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
+        print(f"---------------------------------{bcolors.RESET}\n")
+        exit(3)
 
-        # STEP 3 – Join results of normal and stealth scan
-        all_up_hosts = host_discovery_results.copy()
-        for k, v in stealth_discovery_result.items():
-            if k not in all_up_hosts:
-                all_up_hosts[k] = v
-        setTargets(list(all_up_hosts.keys()), is_overwrite)
-        print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
+    # STEP 3 – Join results of normal and stealth scan
+    all_up_hosts = host_discovery_results.copy()
+    for k, v in stealth_discovery_result.items():
+        if k not in all_up_hosts:
+            all_up_hosts[k] = v
+    setTargets(list(all_up_hosts.keys()), is_overwrite)
+    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
 
-        # STEP 4 – Port scan with service detection (-sVC)
-        targets = list(all_up_hosts.keys())
-        print(f"{bcolors.OKCYAN}[+] Performing service detection on discovered hosts: {targets}\n...")
-        args = ["-sVC","-Pn"]
-        args += targets
-        full_scan = run_nmap_scan(args, verbose,"full_scan")
-        full_scan = parse_nmap_full_discovery(full_scan)
+    # STEP 4 – Port scan with service detection (-sVC)
+    targets = list(all_up_hosts.keys())
+    print(f"{bcolors.OKCYAN}[+] Performing service detection on discovered hosts: {targets}\n...")
+    args = ["-sVC","-Pn"]
+    args += targets
+    full_scan = run_nmap_scan(args, verbose,"full_scan")
+    full_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
 
-        #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
-        extract_service_data()
-    else:
+    #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
+    extract_service_data()
+
+    if is_overwrite and verbose > 1:
         print(f"\n{bcolors.OKCYAN}[✔] Using saved targets.{bcolors.RESET}\n\n")
     print(f"\n{bcolors.OKGREEN}[✔] Full discovery completed.{bcolors.RESET}\n\n")
 
@@ -118,7 +117,7 @@ def extract_service_data():
     separated file for easier reading.
     :return:
     """
-    with open("./results/nmap_aggregated_scan.json", "r") as f:
+    with open(f"{context_manager.current_project}/results/nmap_aggregated_scan.json", "r") as f:
         full_scan = json.load(f)
 
     global current_project
@@ -131,13 +130,13 @@ def extract_service_data():
     for ip in targets:
 
         services = []
-        for port in full_scan[ip].get("ports", []):
-            service_name = port.get("service", {}).get("name", "")
-#            if service_name in ["http", "https"]:
-            services.append({
-                "Service": service_name,
-                "port": str(port.get("port"))
-                })
+        ports = full_scan[ip].get("ports", [])
+        if ports:
+            for port in ports:
+                service_name = port.get("service", {}).get("name", "")
+                services.append({
+                    "Service": service_name,
+                    })
 
         if services:
             http_services[ip] = services
