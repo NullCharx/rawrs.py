@@ -19,27 +19,35 @@ def parse_ip_inputs(input_string, isauto : bool = False):
     or multiple elements (e.g., plain IP strings), and returns a list of IPs.
     CIDRs are expanded into all contained IPs.
     """
-
-
-    if isinstance(input_string, str):
-        input_string = [input_string]
-
+    #Every tool should call loadProjectContextOnMemory() in its argument handler
+    # so it doesnt need to be read from file in every tool
     ips = []
+    if isauto:
+        targetdata = context_manager.targets
+        #Get the context keys (ips) only if we succesfully extracted info from it
+        if targetdata:
+            ips = targetdata
 
-    for entry in input_string:
-        # Split by comma in case of comma-separated entries
-        parts = [p.strip() for p in entry.split(',') if p.strip()]
-        for part in parts:
-            #Return the CIDR
-            if '/' in part:
-                return [part]
-            else:
-                #Get the parsed list and try to parse it before adding
-                try:
-                    ip = ipaddress.ip_address(part)
-                    ips.append(str(ip))
-                except ValueError as e:
-                    raise ValueError(f"Invalid IP address '{part}': {e}")
+    #SI ips sigue estando vacio (por no ser auto o porque no habia contexto anterior)
+    if not ips:
+        if isinstance(input_string, str):
+            input_string = [input_string]
+
+
+        for entry in input_string:
+            # Split by comma in case of comma-separated entries
+            parts = [p.strip() for p in entry.split(',') if p.strip()]
+            for part in parts:
+                #Return the CIDR
+                if '/' in part:
+                    return [part]
+                else:
+                    #Get the parsed list and try to parse it before adding
+                    try:
+                        ip = ipaddress.ip_address(part)
+                        ips.append(str(ip))
+                    except ValueError as e:
+                        raise ValueError(f"Invalid IP address '{part}': {e}")
     return ips
 
 def parse_nmap_host_discovery(json_data, scantype):
@@ -252,7 +260,7 @@ def target_web_parser(targets):
             services = targets.get(target, [])
             if services: # rawrs.py context data. Check service, then the port of said service
                 for service in services:
-                    if service.get("Service", []) == "http" or service.get("Service", []) == "https":
+                    if "http" in service.get("service", []) or "https" in service.get("Service", []):
                         port = service.get("port", [])
                         scannedlist.append(f"{target}:{port}")
             else:

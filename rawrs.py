@@ -8,7 +8,7 @@ from pathlib import Path
 
 from core import context_manager
 from core.config import bcolors, load_global_config, save_global_config
-from core.context_manager import setcurrentenvproject
+from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from core.project_manager.projects import create_project, checkdirectoryisproject
 from reconenum.reconmain import initreconenumsubparsers, cmd_recon_nmapscan
 
@@ -87,6 +87,7 @@ def cmd_tunnel(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose < 2:
         print("[tunnel] (placeholder)")
 
@@ -97,6 +98,7 @@ def cmd_transfer(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose < 2:
         print("[transfer] (placeholder)")
 
@@ -107,6 +109,8 @@ def cmd_osint(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
     if args.verbose < 2:
         print(f"[osint] target={args.target}")
 
@@ -117,6 +121,7 @@ def cmd_gui(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose < 2:
         print("[gui] launching... (placeholder)")
 
@@ -321,6 +326,7 @@ def init_environment(verbosity,config):
     #Create default project
     if not checkdirectoryisproject("cwd"):
         create_project(config["default_project"], verbosity, config)
+
 
 # -------------------------------------------------
 # Main

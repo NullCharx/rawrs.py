@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from core.context_manager import setcurrentenvproject, getTargetsContext
+from core.context_manager import setcurrentenvproject, getTargetsContext, loadProjectContextOnMemory
 from reconenum.parser import parse_ip_inputs, target_web_parser
 from reconenum.web.whatweb import whatwebexecutor
 
@@ -14,9 +14,11 @@ def  cmd_recon_web(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
     if args.verbose > 2:
         print(f"[recon:web full] project={args.project} verbose={args.verbose}")
-    subargs = parse_ip_inputs(args.targets)
+    subargs = parse_ip_inputs(args.targets, args.auto)
     print("YOHOOO ALL SUMMER BLOW OUT")
 
 def what_wapp_fingerprint(args):
@@ -26,13 +28,14 @@ def what_wapp_fingerprint(args):
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
     if args.verbose > 2:
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
-    if args.auto:
-        subargs = getTargetsContext()
-    else:
-        subargs = parse_ip_inputs(args.targets) #Get target arg
+    subargs = parse_ip_inputs(args.targets,args.auto) #Get target arg
     parsedtargets = target_web_parser(subargs) #Parse web enabled targets
+    if args.verbose > 2:
+        print(f"parsed web targets for fingerprint: {parsedtargets}")
     whatwebresults = whatwebexecutor(parsedtargets) #Whatweb
     #wappalizer
     #aggregate results

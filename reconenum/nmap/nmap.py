@@ -134,8 +134,8 @@ def extract_service_data(aggregated_scan):
             for port in ports:
                 service_name = port.get("service", {}).get("name", "")
                 services.append({
-                    "Port": port.get("port",-1),
-                    "Service": service_name,
+                    "port": port.get("port",-1),
+                    "service": service_name,
                     })
 
         if services:

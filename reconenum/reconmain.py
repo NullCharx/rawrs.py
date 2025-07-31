@@ -1,6 +1,6 @@
 import argparse
 
-from core.context_manager import setcurrentenvproject
+from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from reconenum.nmap.nmap import full_discovery
 from reconenum.parser import parse_ip_inputs
 from reconenum.web.webscanner import initwebscanargparser
@@ -66,6 +66,7 @@ def \
     :return:
     """
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
 
     if args.verbose > 2:
         print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
@@ -76,22 +77,27 @@ def \
 
 def cmd_recon_smb(args):
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_dns(args):
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 
 def cmd_recon_ssh(args):
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
 
 def cmd_recon_ftp(args):
     setcurrentenvproject(args)
+    loadProjectContextOnMemory()
     if args.verbose > 2:
         print(f"[recon:web] project={args.project} verbose={args.verbose}")
