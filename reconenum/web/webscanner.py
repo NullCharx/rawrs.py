@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from core.context_manager import setcurrentenvproject, getTargetsContext, loadProjectContextOnMemory
 from reconenum.parser import parse_ip_inputs, target_web_sorter, parse_whatweb_results
-from reconenum.web.whatwebxecutor import whatwebexecutor
+from reconenum.web.webtechanalyzer import whatwebexecutor, webvulnassesor
 
 
 # whatweb and wappalizer should be aggregated together. Then wappity, then recursive fuzzing, then vulns
@@ -18,12 +18,12 @@ def  cmd_recon_web(args):
 
     if args.verbose > 2:
         print(f"[recon:web full] project={args.project} verbose={args.verbose}")
-    subargs = parse_ip_inputs(args.targets, args.auto)
+    subargs = parse_ip_inputs(args.targets, args.auto, args.verbose)
     print("YOHOOO ALL SUMMER BLOW OUT")
 
 def what_wapp_fingerprint(args):
     """
-    Perform target fingerprinting with whatweb and wappalizer
+    Perform target fingerprinting with whatweb
     :param args: args that include the IP or host targets or a flag to perform it on the nmap scanned targets, if any
     :return:
     """
@@ -33,16 +33,40 @@ def what_wapp_fingerprint(args):
 
     if args.verbose > 2:
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
-    subargs = parse_ip_inputs(args.targets,args.auto) #Get target arg
-    parsedtargets = target_web_sorter(subargs) #Parse web enabled targets
+    subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
+    parsedtargets = target_web_sorter(subargs) #Parse web identified targets
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedtargets}")
-    whatwebexecutor(parsedtargets)
+    parsedtargets = whatwebexecutor(parsedtargets) #Scan. Only return web targets that were actually scanned
     #Whatweb
-    finalwhatweb = parse_whatweb_results(parsedtargets)
+    finalwhatwebresults = parse_whatweb_results(parsedtargets)
 
-    #wappalizer
-    #aggregate results
+def webvuln(args):
+    """
+    Perform target vulnerability assesment via wapiti, nikto and wpscan / droopescan if applicable
+    :param args: args that include the IP or host targets or a flag to perform it on the nmap scanned targets, if any
+    :return:
+    """
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+    print(args)
+
+    if args.verbose > 2:
+        print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
+    subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
+    webvulnassesor(subargs)
+def basicfuzzing(args):
+    """
+    Perform directory fuzzing with two common dictionaries and fzzf
+    """
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+    print(args)
+
+    if args.verbose > 2:
+        print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
+    subargs = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+
 
 def initwebscanargparser(recon_sub, commonparser):
     # Main "web" command parser

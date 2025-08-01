@@ -70,7 +70,7 @@ def \
 
     if args.verbose > 2:
         print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
-    subargs = parse_ip_inputs(args.targets)
+    subargs = parse_ip_inputs(args.targets, verbose=args.verbose)
     full_discovery(subargs, args.verbose, args.overwrite)
 
 

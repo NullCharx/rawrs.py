@@ -8,12 +8,13 @@ from tabnanny import verbose
 from urllib.parse import urlparse
 
 from core import context_manager
+from core.config import bcolors
 from core.context_manager import getTargetsContext
 
 """
 Parsing of any arguments or command output of any of the subtools go in this file
 """
-def parse_ip_inputs(input_string, isauto : bool = False):
+def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False):
     """
     Takes a list with one element (e.g., a CIDR or comma-separated IPs)
     or multiple elements (e.g., plain IP strings), and returns a list of IPs.
@@ -30,24 +31,73 @@ def parse_ip_inputs(input_string, isauto : bool = False):
 
     #SI ips sigue estando vacio (por no ser auto o porque no habia contexto anterior)
     if not ips:
+
         if isinstance(input_string, str):
             input_string = [input_string]
 
-
         for entry in input_string:
-            # Split by comma in case of comma-separated entries
             parts = [p.strip() for p in entry.split(',') if p.strip()]
             for part in parts:
-                #Return the CIDR
+                # Handle CIDR first
                 if '/' in part:
-                    return [part]
-                else:
-                    #Get the parsed list and try to parse it before adding
                     try:
-                        ip = ipaddress.ip_address(part)
-                        ips.append(str(ip))
+                        ipaddress.ip_network(part, strict=False)
+                        return [part]
                     except ValueError as e:
-                        raise ValueError(f"Invalid IP address '{part}': {e}")
+                        if verbose>0:
+                            print(f"\n{bcolors.FAIL}[-] Invalid CIDR '{part}': {e}. Skipping{bcolors.RESET}")
+                # Parsear como url
+                parsed = urlparse(part)
+
+                # Si tiene protocolo (prot://) se chequea la IP y se acpeta
+                if parsed.scheme:
+                    host = parsed.hostname
+                    if host:
+                        try:
+                            ip = ipaddress.ip_address(host)
+                            ips.append(str(ip))
+                        except ValueError as e:
+                            if verbose > 0:
+                                print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                    else:
+                        if verbose>0:
+                            print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+                else:
+                    #Si no comprobar puerto. Para ello hay que mirar port que solo funciona si la url tiene esquema
+                    test_parse = urlparse(f'bogus://{part}')
+                    if test_parse.port:
+                        host = parsed.hostname
+                        if host:
+                            try:
+                                ip = ipaddress.ip_address(host)
+                                ips.append(str(ip))
+                            except ValueError as e:
+                                if verbose > 0:
+                                    print(
+                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                        else:
+                            if verbose > 0:
+                                print(
+                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+
+                    else:
+                        #Si no hay ni puerto ni esquema comprobar como IP
+                        host = test_parse.hostname
+                        if host:
+                            try:
+                                ip = ipaddress.ip_address(host)
+                                ips.append(str(ip))
+                            except ValueError as e:
+                                if verbose > 0:
+                                    print(
+                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                        else:
+                            if verbose > 0:
+                                print(
+                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+    if not ips:
+        print(f"\n{bcolors.FAIL}[-] No valid IPs given. Aborting{bcolors.RESET}")
+        exit(-1)
     return ips
 
 def parse_nmap_host_discovery(json_data, scantype):
@@ -211,12 +261,11 @@ def parse_whatweb_results(list):
     """
     results = {}
     for target in list:
-        #TOMORROW: TEst la salida teh whatwebexexutor, because this errors man idk check it tomorrow or something
         safestring = ""
         if "http" in target:
             safestring = "http:" + target[8:]
         elif "https" in target:
-            safestring = "https:" + target[8:]
+            safestring = "https:" + target[9:]
         else:
             safestring = target
 
