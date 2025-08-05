@@ -15,6 +15,7 @@ from core.context_manager import getTargetsContext
 Parsing of any arguments or command output of any of the subtools go in this file
 """
 def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False):
+
     """
     Takes a list with one element (e.g., a CIDR or comma-separated IPs)
     or multiple elements (e.g., plain IP strings), and returns a list of IPs.
@@ -29,7 +30,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
         if targetdata:
             ips = targetdata
 
-    #SI ips sigue estando vacio (por no ser auto o porque no habia contexto anterior)
+    #If ips still empty (due to being auto or not having previ ctx)
     if not ips:
 
         if isinstance(input_string, str):
@@ -46,10 +47,10 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                     except ValueError as e:
                         if verbose>0:
                             print(f"\n{bcolors.FAIL}[-] Invalid CIDR '{part}': {e}. Skipping{bcolors.RESET}")
-                # Parsear como url
+                # Parrse as url
                 parsed = urlparse(part)
 
-                # Si tiene protocolo (prot://) se chequea la IP y se acpeta
+                # If it got scheme (shceme://), check the ip and accept it if its valid
                 if parsed.scheme:
                     host = parsed.hostname
                     if host:
@@ -63,7 +64,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                         if verbose>0:
                             print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
                 else:
-                    #Si no comprobar puerto. Para ello hay que mirar port que solo funciona si la url tiene esquema
+                    #IF not check port. Port only works if ther eis a scheme present. Can be real or not
                     test_parse = urlparse(f'bogus://{part}')
                     if test_parse.port:
                         host = parsed.hostname
@@ -81,7 +82,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                                 f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
 
                     else:
-                        #Si no hay ni puerto ni esquema comprobar como IP
+                        #If no port and no scheme directly check the IP
                         host = test_parse.hostname
                         if host:
                             try:
@@ -252,15 +253,26 @@ def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
 
     return result
 
-def parse_whatweb_results(list):
-    #TODO need to wappalizer and then parse everything together here...nn
+def parse_whatweb_results(listoftargets, output_path = None, overwrite:bool = False):
     """
     Parse the whateb scaner results in a new easier readable and processable file
-    :param list:
+    :param overwrite: wether to add to
+    :param output_path: output path for the aggregated scan
+    :param listoftargets:
     :return:
     """
-    results = {}
-    for target in list:
+    if not output_path:
+        output_path = f"{context_manager.current_project}/results/nmap_aggregated_scan.json"
+
+    if not overwrite:
+        if os.path.exists(output_path):
+            with open(output_path, "r") as f:
+                results = json.load(f)
+        else:
+            results = {}
+    else:
+        results = {}
+    for target in listoftargets:
         safestring = ""
         if "http" in target:
             safestring = "http:" + target[8:]
@@ -303,7 +315,7 @@ def parse_whatweb_results(list):
                     target_info[plugin_name.lower()] = strings
 
             results[target] = target_info
-    with open(f"{context_manager.current_project}/results/whatweb_aggregated.json", "w") as f:
+    with open(f"{output_path}", "w") as f:
         json.dump(results, f, indent=4)
 
     return results
@@ -317,11 +329,12 @@ def target_web_sorter(targets):
     """
     scannedlist = []
     if len(targets) > 1:
+        print(targets)
         for target in targets:
-            services = targets.get(target, [])
-            if services: # rawrs.py context data. Check service, then the port of said service
+            #COntext dict vs ip list
+            if isinstance(target, dict) and (services := target.get('services', [])):
                 for service in services:
-                    if "http" in service.get("service", []) or "https" in service.get("Service", []):
+                    if "http" in service or "https" in service:
                         port = service.get("port", [])
                         scannedlist.append(f"{target}:{port}")
             else:
@@ -330,6 +343,8 @@ def target_web_sorter(targets):
     else:
         #only one target
         scannedlist += parse_web_port_or_scheme(targets[0])
+
+    print(scannedlist)
     return scannedlist
 
 def parse_web_port_or_scheme(url) -> list:
@@ -340,7 +355,7 @@ def parse_web_port_or_scheme(url) -> list:
     :return:
     """
     parsecheck = urlparse(url)
-
+    print(parsecheck)
     if parsecheck.scheme:
         if parsecheck.scheme == "http" or parsecheck.scheme == "https":
             return [url]

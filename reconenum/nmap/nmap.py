@@ -58,43 +58,9 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
 
 
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
-    savedtargets = getTargetsContext()
 
-    # STEP 1 – Basic Host Discovery (ping scan)
-    print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
-    args = ["-sn"]
-    args += ip_range
-    host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
-    if host_discovery_results.get("Host", []):
-        host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
-        if verbose > 0:
-
-            print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
-            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
-
-    # STEP 2 – Additional discovery for stealthy or filtered hosts
-    args[0] = f"-sS"
-    print(f"{bcolors.OKCYAN}[+] Discovering quiet hosts (stealth)...")
-    stealth_discovery_result = run_nmap_scan(args, verbose,"stealth_discovery")
-    if stealth_discovery_result.get("Host", []):
-        stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
-        if verbose > 0:
-
-            print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
-            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
-    elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
-        print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
-        print(f"---------------------------------{bcolors.RESET}\n")
-        exit(3)
-
-    # STEP 3 – Join results of normal and stealth scan
-    all_up_hosts = host_discovery_results.copy()
-    for k, v in stealth_discovery_result.items():
-        if k not in all_up_hosts:
-            all_up_hosts[k] = v
-
-    setTargets(all_up_hosts,is_overwrite)
-    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
+    # STEP 0 – check the targets for alive hosts
+    all_up_hosts = checkalivehosts(ip_range, is_overwrite, verbose)
 
     # STEP 4 – Port scan with service detection (-sVC)
     targets = list(all_up_hosts.keys())
@@ -110,6 +76,51 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
     if is_overwrite and verbose > 1:
         print(f"\n{bcolors.OKCYAN}[✔] Merging with saved targets.{bcolors.RESET}\n\n")
     print(f"\n{bcolors.OKGREEN}[✔] Full discovery completed.{bcolors.RESET}\n\n")
+
+
+def checkalivehosts(ip_range, is_overwrite, verbose):
+    """
+    For a given CIDR or comma separate IP list, returns only the IP targets that
+    responded UP to either a normal or stealth scan
+    :param:ip_range: the CIDR or comma separate IP list
+    :param:is_overwrite: if the targets are added to or overwrite any existing project targets
+    :param:verbose: verbosity
+    """
+    # STEP 1 – Basic Host Discovery (ping scan)
+    print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
+    args = ["-sn"]
+    args += ip_range
+    host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
+    if host_discovery_results.get("Host", []):
+        host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
+        if verbose > 0:
+            print(f"{bcolors.OKCYAN}[+] Ping scan found {len(host_discovery_results)} hosts up.")
+            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
+    # STEP 2 – Additional discovery for stealthy or filtered hosts
+    args[0] = f"-sS"
+    print(f"{bcolors.OKCYAN}[+] Discovering quiet hosts (stealth)...")
+    stealth_discovery_result = run_nmap_scan(args, verbose, "stealth_discovery")
+    if stealth_discovery_result.get("Host", []):
+        stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
+        if verbose > 0:
+            print(f"{bcolors.OKCYAN}[+] Stealth scan found {len(stealth_discovery_result)} hosts up.\n")
+            print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}\n")
+    elif not host_discovery_results.get("Host", []) and not stealth_discovery_result.get("Host", []):
+        print(
+            f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
+        print(f"---------------------------------{bcolors.RESET}\n")
+        exit(3)
+    # STEP 3 – Join results of normal and stealth scan
+    all_up_hosts = host_discovery_results.copy()
+    for k, v in stealth_discovery_result.items():
+        print(k)
+        print(v)
+        print("--")
+        if k not in all_up_hosts:
+            all_up_hosts[k] = v
+    setTargets(all_up_hosts, is_overwrite)
+    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}, {all_up_hosts}\n")
+    return all_up_hosts
 
 
 def extract_service_data(aggregated_scan):

@@ -55,7 +55,7 @@ def setTargets(listoftargets : dict, overwrite : bool = False):
     :param overwrite: whether to overwrite targets or add the list to the already existing (removing duplicates)
     :return:
     """
-    savedtargetlist = list(targets.keys())
+    savedtargetlist = list(targets)
     writtentargetlsit = list(listoftargets.keys())
     if overwrite:
         saveTargetContext(writtentargetlsit) #Overwrite

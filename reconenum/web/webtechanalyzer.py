@@ -27,9 +27,10 @@ def whatwebexecutor(targets):
         else:
             safestring = target
         try:
-            with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", 'w') as file:
+            with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", 'w+') as file:
                 file.write("")
-        except FileExistsError:
+        except Exception as e:
+            print(f"Exception opening {safestring}.json: {e}")
             pass
 
         status = subprocess.run(
@@ -42,9 +43,3 @@ def whatwebexecutor(targets):
         else:
             validtargets.append(target)
     return validtargets
-
-def webvulnassesor(targets):
-    #Wapiti then nikto then wpscan and drupal
-    pass
-def wapitiexecutor(targets):
-    pass
