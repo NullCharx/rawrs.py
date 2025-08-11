@@ -10,7 +10,6 @@ def run_wapiti_scan(args, disable_ssl=False):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    validtargets = []
     for target in list(args):
         # Ensure URL has scheme
         if not target.startswith("http"):
@@ -49,13 +48,11 @@ def run_wapiti_scan(args, disable_ssl=False):
             if result.stderr:
                 print(result.stderr.decode())
                 os.remove(output_path)
-            else:
-                validtargets.append(target)
         except subprocess.CalledProcessError as e:
             print(f"[!] Wapiti scan failed on {target_url}: {e}")
             os.remove(output_path)
 
-    return validtargets
+    return
 
 
 def run_nikto_scan(args, force_ssl=False):

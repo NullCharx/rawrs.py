@@ -1,6 +1,7 @@
 from core import context_manager
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
-from reconenum.parser import parse_ip_inputs, target_web_sorter, parse_webtechresults, parse_web_targets
+from reconenum.parser import parse_ip_inputs, target_web_sorter, parse_webtechresults, parse_web_targets, parse_wapiti, \
+    parse_nikto, aggregate_webvulns
 from reconenum.nmap.nmap import parsealivehosts
 from reconenum.web.webtechanalyzer import whatwebexecutor
 from reconenum.web.webvulnanalyzer import run_wpscan_scan, run_wapiti_scan, run_nikto_scan
@@ -45,9 +46,12 @@ def webvuln(args):
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(subargs, alivetargets)
+    #Make wapiti and nikto return the correct dicts to parse
     wapiti_output = run_wapiti_scan(parsedtargets)
+    parsed_wapiti = parse_wapiti(wapiti_output)
     niktooutput = run_nikto_scan(parsedtargets)
-
+    parsed_nikto = parse_nikto(niktooutput)
+    aggregate_webvulns(parsed_wapiti,parsed_nikto)
 def cmsscan(args):
     """
     Scan given targets for CMS (Wordpress, drupal) vulnerabilities

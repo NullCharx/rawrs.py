@@ -421,3 +421,57 @@ def parse_web_targets(alivetargets, inputtargets):
     return parsedtargets
 
 
+
+def parse_wapiti(json_data):
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+
+    return {
+        "target": json_data.get("target"),
+        "vulnerabilities": [
+            {
+                "type": vuln_type,
+                "severity": vuln.get("severity"),
+                "method": vuln.get("method"),
+                "path": vuln.get("path"),
+                "params": vuln.get("parameter", {})
+            }
+            for vuln_type, vuln_list in json_data.get("vulnerabilities", {}).items()
+            for vuln in vuln_list
+        ]
+    }
+
+def parse_nikto(json_data):
+    if isinstance(json_data, str):
+        json_data = json.loads(json_data)
+
+    return {
+        "target": json_data.get("host"),
+        "vulnerabilities": [
+            {
+                "message": v.get("msg"),
+                "uri": v.get("uri"),
+                "references": v.get("references", [])
+            }
+            for v in json_data.get("vulnerabilities", [])
+        ]
+    }
+
+def aggregate_webvulns(*parsed_results):
+
+    aggregated = {}
+
+    for parsed in parsed_results:
+        target = parsed.get("target", "unknown")
+        if target not in aggregated:
+            aggregated[target] = {
+                "target": target,
+                "vulnerabilities": []
+            }
+
+        # Merge vulnerabilities/findings into a single list
+        vulns = parsed.get("vulnerabilities", [])
+        aggregated[target]["vulnerabilities"].extend(vulns)
+
+    with open(f"{context_manager.current_project}/results/webvulns_aggregated.json", "w", encoding="utf-8") as f:
+        json.dump(aggregated, f, indent=2)
