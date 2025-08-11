@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 from core import context_manager
 from core.config import bcolors
-from core.context_manager import getTargetsContext
 
 """
 Parsing of any arguments or command output of any of the subtools go in this file
@@ -25,10 +24,12 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
     # so it doesnt need to be read from file in every tool
     ips = []
     if isauto:
-        targetdata = context_manager.targets
-        #Get the context keys (ips) only if we succesfully extracted info from it
+        targetdata = context_manager.getNmapAggregatedData()
+        #Get the context keys from previous nmap if the aggregated file exists, else try to pull the targets from context
         if targetdata:
             ips = targetdata
+        else:
+            ips = context_manager.targets
 
     #If ips still empty (due to being auto or not having previ ctx)
     if not ips:
@@ -40,16 +41,15 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
             parts = [p.strip() for p in entry.split(',') if p.strip()]
             for part in parts:
                 # Handle CIDR first
-                if '/' in part:
+                if '/' in part and '://':
                     try:
                         ipaddress.ip_network(part, strict=False)
                         return [part]
                     except ValueError as e:
                         if verbose>0:
-                            print(f"\n{bcolors.FAIL}[-] Invalid CIDR '{part}': {e}. Skipping{bcolors.RESET}")
+                            print(f"\n{bcolors.FAIL}[-] Invalid CIDR '{part}': {e}. Might be a URL instead{bcolors.RESET}")
                 # Parrse as url
                 parsed = urlparse(part)
-
                 # If it got scheme (shceme://), check the ip and accept it if its valid
                 if parsed.scheme:
                     host = parsed.hostname
@@ -84,14 +84,18 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                     else:
                         #If no port and no scheme directly check the IP
                         host = test_parse.hostname
+                        path = test_parse.path
                         if host:
-                            try:
-                                ip = ipaddress.ip_address(host)
-                                ips.append(str(ip))
-                            except ValueError as e:
-                                if verbose > 0:
-                                    print(
-                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                            if "localhost" in host:
+                                ips.append('127.0.0.1'+path)
+                            else:
+                                try:
+                                    ip = ipaddress.ip_address(host)
+                                    ips.append(str(ip))
+                                except ValueError as e:
+                                    if verbose > 0:
+                                        print(
+                                        f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}.{bcolors.RESET}")
                         else:
                             if verbose > 0:
                                 print(
@@ -253,7 +257,7 @@ def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
 
     return result
 
-def parse_whatweb_results(listoftargets, output_path = None, overwrite:bool = False):
+def parse_webtechresults(listoftargets, output_path = None, overwrite:bool = False):
     """
     Parse the whateb scaner results in a new easier readable and processable file
     :param overwrite: wether to add to
@@ -321,31 +325,43 @@ def parse_whatweb_results(listoftargets, output_path = None, overwrite:bool = Fa
     return results
 
 def target_web_sorter(targets):
-    """Given a target list or project context target dict,
-    compute which targets are web-ennabled.
-    In the case of CIDR, single or list of IPs, these are assumed to either
-    have the port or protocol specified (IP:PORT) or (PROTOCOL://IP)
-    or will have the http or https protocol autoprepended
+    """
+    Given a target list or project context target dict, determine which targets are web-enabled.
+
+    If targets is a dict (project context):
+        - Iterate through each target and check the 'ports' list.
+        - If any port's service name contains 'http' or 'https', add IP:PORT to scannedlist.
+
+    If targets is a list (IP addresses or hostnames):
+        - Parse each entry with parse_web_port_or_scheme() to determine the web-enabled addresses.
+
+    CIDR, single IPs, and IP lists:
+        - Either already specify port/protocol (IP:PORT or PROTOCOL://IP)
+        - Or will have http:// or https:// automatically prepended.
     """
     scannedlist = []
-    if len(targets) > 1:
-        print(targets)
-        for target in targets:
-            #COntext dict vs ip list
-            if isinstance(target, dict) and (services := target.get('services', [])):
-                for service in services:
-                    if "http" in service or "https" in service:
-                        port = service.get("port", [])
-                        scannedlist.append(f"{target}:{port}")
-            else:
-                #Regular ip list. Parse each one. If not correct, the list will be empty and nothing will be added
-                scannedlist += parse_web_port_or_scheme(target)
-    else:
-        #only one target
-        scannedlist += parse_web_port_or_scheme(targets[0])
 
-    print(scannedlist)
+    if isinstance(targets, dict):
+        # Context dict case
+        for ip, data in targets.items():
+            ports = data.get('ports', [])
+            for port_info in ports:
+                service = port_info.get("service", {})
+                service_name = service.get("name", "").lower()
+                if "http" in service_name or "https" in service_name:
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"{ip}:{port_number}")
+
+    elif isinstance(targets, list):
+        # Simple list of targets case
+        for target in targets:
+            scannedlist += parse_web_port_or_scheme(target)
+
+    else:
+        raise TypeError("targets must be either a dict or a list")
+
     return scannedlist
+
 
 def parse_web_port_or_scheme(url) -> list:
     """
@@ -355,7 +371,6 @@ def parse_web_port_or_scheme(url) -> list:
     :return:
     """
     parsecheck = urlparse(url)
-    print(parsecheck)
     if parsecheck.scheme:
         if parsecheck.scheme == "http" or parsecheck.scheme == "https":
             return [url]
@@ -370,3 +385,39 @@ def parse_web_port_or_scheme(url) -> list:
         else:
             #If no scheme and no port, default to check both normal and secure default http ports
             return ["http://" + url, "https://" + url]
+
+def filter_alive_targets(alive_list, subargs):
+    """
+    Filters subargs based on alive_list.
+
+    alive_list : list
+        List of currently alive targets.
+    subargs : dict | list
+        - If dict (from JSON): remove any keys not present in alive_list.
+        - If list (from context or parsed input): return as is.
+    """
+    if isinstance(subargs, dict):
+        # Keep only keys that are in alive_list
+        return {k: v for k, v in subargs.items() if k in alive_list}
+
+    elif isinstance(subargs, list):
+        # Already a filtered list — return immediately
+        return subargs
+
+    else:
+        raise TypeError("subargs must be either a dict or a list-YOU SHOULDN'T BE SEEING HERE")
+
+
+def parse_web_targets(alivetargets, inputtargets):
+    '''
+    Get a list of web enabled targets with valid ports scehemes or URLs
+    :param alivetargets: targets scanned and responding (list)
+    :param inputtargets: nmap context dict or target list
+    :return:
+    '''
+    filteredtargets = filter_alive_targets(list(alivetargets.keys()), inputtargets)
+    # Then probably get alivetargets,finaldata and parsedtargets into a common parse method to not clog everything in various methods
+    parsedtargets = target_web_sorter(filteredtargets)  # Parse web identified targets
+    return parsedtargets
+
+

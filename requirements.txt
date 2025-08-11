@@ -5,3 +5,4 @@ requests~=2.32.4
 colorama~=0.4.6
 python3-Wappalyzer~=0.1.22
 python-Wappalyzer~=0.3.1
+droopescan~=1.45.1

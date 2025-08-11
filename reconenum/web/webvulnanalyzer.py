@@ -1,73 +1,216 @@
+import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
+from core import context_manager
 
-def run_wapiti_scan(
-    target_url,
-    output_dir="results/wapiti",
-    depth=5,
-    delay=1,
-    user_agent=None,
-    cookie=None,
-    proxy=None,
-    auth=None,
-    ssl_verify=True,
-    modules=None  # list of modules, or None for --all
-):
-    """
-    Run a full Wapiti scan on the given target.
+def run_wapiti_scan(args, disable_ssl=False):
+    output_dir = Path(context_manager.current_project) / "scans" / "webtech"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    Args:
-        target_url (str): The full URL to scan (must include scheme).
-        output_dir (str): Directory to store Wapiti reports.
-        depth (int): Crawl depth.
-        delay (int): Delay between requests (in seconds).
-        user_agent (str): Custom User-Agent.
-        cookie (str): Cookie string.
-        proxy (str): Proxy URL.
-        auth (str): "username:password" format.
-        ssl_verify (bool): Whether to verify SSL certificates.
-        modules (list): Specific Wapiti modules to run, or None for all.
+    validtargets = []
+    for target in list(args):
+        # Ensure URL has scheme
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
 
-    Returns:
-        int: Exit code of the subprocess.
-    """
-    report_path = Path(output_dir)
-    report_path.mkdir(parents=True, exist_ok=True)
+        # Make file path safe
+        safestring = target_url.replace("://", "_").replace("/", "_")
+        output_path = output_dir / f"wapiti_{safestring}.json"
 
-    cmd = [
-        "wapiti",
-        "-u", target_url,
-        "--format", "json",
-        "--output", str(report_path / "report.json"),
-        "--scope", "page",
-        "--max-depth", str(depth),
-        "--max-links-per-page", "100",
-        "--timeout", "30",
-        "--delay", str(delay)
-    ]
+        try:
+            with open(output_path, 'w+') as file:
+                file.write("")
+        except Exception as e:
+            print(f"Exception opening {output_path.name}: {e}")
+            continue
 
-    if not ssl_verify:
-        cmd.append("--no-ssl-check")
+        cmd = [
+            "wapiti","-u", target_url,
+            "--scope", "domain",
+            "--depth",  "5",
+            "--max-links-per-page", "100",
+            "--format","json",
+            "--output", str(output_path),
+            "--flush-session", "--color"
+        ]
 
-    if modules:
-        cmd += ["--module", ",".join(modules)]
-    else:
-        cmd.append("--all")
+        if disable_ssl:
+            cmd.append("--no-ssl-check")
 
-    if user_agent:
-        cmd += ["--user-agent", user_agent]
+        print(f"[+] Running Wapiti on {target_url}...")
 
-    if cookie:
-        cmd += ["--cookie", cookie]
+        try:
+            result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+            if result.stderr:
+                print(result.stderr.decode())
+                os.remove(output_path)
+            else:
+                validtargets.append(target)
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Wapiti scan failed on {target_url}: {e}")
+            os.remove(output_path)
 
-    if proxy:
-        cmd += ["--proxy", proxy]
+    return validtargets
 
-    if auth:
-        cmd += ["--auth", auth]
 
-    print(f"[+] Launching Wapiti: {' '.join(cmd)}")
+def run_nikto_scan(args, force_ssl=False):
+    output_dir = Path(context_manager.current_project) / "scans" / "webtech"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    result = subprocess.run(cmd)
-    return result.returncode
+    validtargets = []
+
+    for target in list(args):
+        # Ensure scheme
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
+
+        # Parse scheme and hostname
+        scheme, hostname = target_url.split("://", 1)
+
+        # Make filename-safe version
+        safestring = target_url.replace("://", "_").replace("/", "_")
+        output_path = output_dir / f"nikto_{safestring}.json"
+
+        try:
+            with open(output_path, "w+") as f:
+                f.write("")
+        except Exception as e:
+            print(f"[!] Failed to create output file for {target}: {e}")
+            continue
+
+        # Base command
+        cmd = [
+            "nikto",
+            "-host", target_url,
+            "-Format", "json",
+            "-output", str(output_path),
+            "-ask", "no",
+            "-nointeractive",
+            "-Display", "EPV",           # Errors, Progress, Verbose
+            "-followredirects",
+            "-Tuning", "1234567890abcde",  # Full tuning set
+        ]
+
+        if force_ssl or scheme == "https":
+            cmd.append("-ssl")
+
+        print(f"[+] Running Nikto on {target_url}...")
+
+
+        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+        if result.returncode == 1:
+            validtargets.append(target)
+        if result.stderr:
+            print(result.stderr.decode())
+            os.remove(output_path)
+            print(f"[!] Nikto scan failed on {target_url}")
+
+    return validtargets
+
+def run_wpscan_scan(args):
+    output_dir = Path(context_manager.current_project) / "scans" / "cms"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_targets = []
+
+    for target in args.targets:
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
+
+
+        full_url = target_url.rstrip("/")
+
+        safestring = full_url.replace("://", "_").replace("/", "_")
+        output_path = output_dir / f"wpscan_{safestring}.json"
+
+        wpscan_cmd = [
+            "wpscan",
+            "--url", str(target_url),
+
+            "--enumerate", "ap,at,u,tt,cb,dbe,m",
+            "--plugins-detection", "aggressive",
+            "--plugins-version-detection", "aggressive",
+            "--random-user-agent",
+            "--disable-tls-checks",
+            "--max-threads", "50",
+            "--detection-mode", "aggressive",
+            "--no-update",
+            "--output", str(output_path),
+            "--format", "json",
+        ]
+        if args.auth:
+            wpscan_cmd.append("--http-auth")
+            wpscan_cmd.append(args.httpauth)
+        if args.cookies:
+            wpscan_cmd.append("cookie-string")
+            wpscan_cmd.append(args.cookies)
+        if args.userdict:
+            wpscan_cmd.append("--usernames")
+            wpscan_cmd.append(args.userdict)
+        if args.passdict:
+            wpscan_cmd.append("--passwords")
+            wpscan_cmd.append(args.passdict)
+        print(f"[+] Running WPScan on {full_url}... (This might take a while!)")
+
+        try:
+            subprocess.run(wpscan_cmd,capture_output=True, check=True)
+            valid_targets.append(full_url)
+        except subprocess.CalledProcessError as e:
+            print(f"[!] WPScan failed on {full_url}: {e}")
+
+        print(f"[+] Wpscan on {full_url} done. You might want to manually check other options such as username and password bruteforcing")
+
+    return valid_targets
+
+'''
+def run_droopescan_scan(args):
+    output_dir = Path(context_manager.current_project) / "scans" / "webtech"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_targets = []
+
+    cms_list = ["drupal", "joomla", "moodle", "silverstripe"]
+
+    for target in args.targets:
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
+
+        full_url = target_url.rstrip("/")
+        print(shutil.which("droopescan"))
+        for cms in cms_list:
+            safestring = f"{cms}_" + full_url.replace("://", "_").replace("/", "_")
+            output_path = output_dir / f"droopescan_{safestring}.json"
+
+            cmd = [
+                shutil.which("droopescan"),
+                "scan", cms,
+                "--url", full_url,
+                "--enumerate", "a",
+                "--number", "all",
+                "--output", "json",
+                "--output-file", str(output_path)
+            ]
+
+            print(f"[+] Running Droopescan ({cms}) on {full_url}...")
+
+            try:
+                subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+                valid_targets.append((cms, full_url))
+            except subprocess.CalledProcessError as e:
+                print(f"[!] Droopescan failed for {cms} at {full_url}: {e}")
+                if output_path.exists():
+                    os.remove(output_path)
+
+    return valid_targets
+'''

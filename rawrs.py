@@ -323,6 +323,44 @@ def init_environment(verbosity,config):
         if verbosity > 2:
             print(f"{bcolors.OKGREEN}[+] wapiti installed{bcolors.RESET}")
 
+    if not shutil.which("ruby"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] Ruby is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["apt", "install", "ruby"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] Ruby couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] ruby installed{bcolors.RESET}")
+
+    if not shutil.which("wpscan"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] wpscan is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["gem", "install", "wpscan activesupport"],
+                capture_output=False,
+            )
+            result = subprocess.run(
+                ["apt", "install", " build-essential libxml2 libxml2-dev libxslt1-dev ruby-dev  libgmp-dev zlib1g-devlibcurl4=7.88.1-10+deb12u14 libcurl4-openssl-dev"]
+            )
+        except Exception:
+            print(
+                f"{bcolors.FAIL}[!] wpscan couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+        else:
+            if verbosity > 2:
+                print(f"{bcolors.OKGREEN}[+] wpscan installed{bcolors.RESET}")
+        result = subprocess.run(
+            ["wpscan", "--update"]
+        )
+
+    #Check wpscan command somewhere. THen droppescan.
     #Create default project
     if not checkdirectoryisproject("cwd"):
         create_project(config["default_project"], verbosity, config)

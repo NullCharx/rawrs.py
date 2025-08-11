@@ -36,6 +36,7 @@ def create_project(name, verbosity, config):
                 (project_path / folder / "nmap"/"xml").mkdir()
                 (project_path / folder / "nmap"/"json").mkdir()
                 (project_path / folder / "webtech").mkdir()
+                (project_path / folder / "cms").mkdir()
 
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {

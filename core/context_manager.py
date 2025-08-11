@@ -78,6 +78,10 @@ def saveTargetContext (targetCtx):
     with open(f'{current_project}/context.json', 'w') as file:
         json.dump(data, file, indent=4)  # Writing back with indentation for readability
 
+def getNmapAggregatedData():
+    with open(f'{current_project}/results/nmap_aggregated_scan.json', 'r') as file:
+        return json.load(file)  # Parse the JSON file into a Python dictionary
+
 def saveTunnelContext (tunnelCtx):
     """
     Save the current project tunnel context into its file and on memory
