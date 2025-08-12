@@ -50,7 +50,6 @@ def webvuln(args):
         print(f"parsed web targets for fingerprint: {parsedtargets}")
     #Make wapiti and nikto return the correct dicts to parse
     wapiti_output = run_wapiti_scan(parsedtargets)
-    print(wapiti_output)
     parsed_wapiti = parse_wapiti(wapiti_output)
     niktooutput = run_nikto_scan(parsedtargets)
     parsed_nikto = parse_nikto(niktooutput)

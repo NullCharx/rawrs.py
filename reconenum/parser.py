@@ -420,35 +420,36 @@ def parse_web_targets(alivetargets, inputtargets):
     parsedtargets = target_web_sorter(filteredtargets)  # Parse web identified targets
     return parsedtargets
 
+from pathlib import Path
+import json
 
-def parse_wapiti(targets):
+def parse_wapiti(targets, output_path=None):
     """
     Parse Wapiti scan results for a given list of targets.
-    Each target's file should exist in project/scans/webtech/wapiti_{target}.json.
+    Each target's file should exist as wapiti_{safe_target}.json in output_path.
     Returns: [{target, vulnerabilities}, ...]
     """
     results = []
-    base_dir = Path(context_manager.current_project) / "scans" / "webtech"
+
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "scans" / "webtech"
+    else:
+        output_path = Path(output_path)
 
     for target in targets:
-        # Ensure URL has scheme (matches scan method's naming)
-        if not target.startswith("http"):
-            target_url = "http://" + target
-        else:
-            target_url = target
-
+        # Ensure consistent filename
+        target_url = target if target.startswith("http") else "http://" + target
         safestring = target_url.replace("://", "_").replace("/", "_")
-        file_path = base_dir / f"wapiti_{safestring}.json"
+        file_path = output_path / f"wapiti_{safestring}.json"
 
         if not file_path.exists():
             print(f"[!] Wapiti file not found for target {target}")
             continue
+        if file_path.stat().st_size == 0:
+            print(f"[!] Skipping empty Wapiti file: {file_path}")
+            continue
 
         try:
-            if file_path.stat().st_size == 0:
-                print(f"[!] Skipping empty Wapiti file: {file_path}")
-                continue
-
             with open(file_path, "r", encoding="utf-8") as f:
                 json_data = json.load(f)
 
@@ -468,53 +469,68 @@ def parse_wapiti(targets):
 
     return results
 
-def parse_nikto(targets):
+
+def parse_nikto(targets, output_path=None):
     """
     Parse Nikto scan results for a given list of targets.
-    Each target's file should exist in project/scans/webtech/nikto_{target}.json.
+    Each target's file should exist as nikto_{safe_target}.json in output_path.
     Returns: [{target, vulnerabilities}, ...]
     """
     results = []
-    base_dir = Path(context_manager.current_project) / "scans" / "webtech"
+
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "scans" / "webtech"
+    else:
+        output_path = Path(output_path)
 
     for target in targets:
-        # Ensure URL has scheme (to match scan output naming)
-        if not target.startswith("http"):
-            target_url = "http://" + target
-        else:
-            target_url = target
-
+        target_url = target if target.startswith("http") else "http://" + target
         safestring = target_url.replace("://", "_").replace("/", "_")
-        file_path = base_dir / f"nikto_{safestring}.json"
+        file_path = output_path / f"nikto_{safestring}.json"
 
         if not file_path.exists():
             print(f"[!] Nikto file not found for target {target}")
             continue
+        if file_path.stat().st_size == 0:
+            print(f"[!] Skipping empty Nikto file: {file_path}")
+            continue
 
         try:
-            if file_path.stat().st_size == 0:
-                print(f"[!] Skipping empty Nikto file: {file_path}")
-                continue
-
             with open(file_path, "r", encoding="utf-8") as f:
                 json_data = json.load(f)
 
-            if not isinstance(json_data, dict):
-                print(f"[!] Unexpected JSON format in {file_path}")
+            # Nikto output may be a dict or list
+            if isinstance(json_data, dict):
+                entries = [json_data]
+            elif isinstance(json_data, list):
+                entries = json_data
+            else:
+                print(f"[!] Unexpected JSON type in {file_path}")
                 continue
 
-            vulns = []
-            for v in json_data.get("vulnerabilities", []):
-                vulns.append({
-                    "message": v.get("msg"),
-                    "uri": v.get("uri"),
-                    "references": v.get("references", [])
-                })
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    continue
+                host = entry.get("host", target)
+                port = entry.get("port", "")
+                target_str = f"{host}:{port}" if port else host
 
-            results.append({
-                "target": target_url,
-                "vulnerabilities": vulns
-            })
+                vulns = []
+                for v in entry.get("vulnerabilities", []):
+                    if isinstance(v, dict):
+                        vulns.append({
+                            "message": v.get("msg"),
+                            "uri": v.get("uri"),
+                            "references": v.get("references", [])
+                        })
+                    elif isinstance(v, str):
+                        vulns.append({"message": v})
+
+                if vulns:
+                    results.append({
+                        "target": target_str,
+                        "vulnerabilities": vulns
+                    })
 
         except json.JSONDecodeError as e:
             print(f"[!] Invalid JSON in {file_path}: {e}")
@@ -522,7 +538,6 @@ def parse_nikto(targets):
             print(f"[!] Error reading {file_path}: {e}")
 
     return results
-
 
 
 def normalize_host(target_str):
