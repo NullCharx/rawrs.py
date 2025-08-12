@@ -421,57 +421,164 @@ def parse_web_targets(alivetargets, inputtargets):
     return parsedtargets
 
 
+def parse_wapiti(targets):
+    """
+    Parse Wapiti scan results for a given list of targets.
+    Each target's file should exist in project/scans/webtech/wapiti_{target}.json.
+    Returns: [{target, vulnerabilities}, ...]
+    """
+    results = []
+    base_dir = Path(context_manager.current_project) / "scans" / "webtech"
 
-def parse_wapiti(json_data):
-    if isinstance(json_data, str):
-        json_data = json.loads(json_data)
+    for target in targets:
+        # Ensure URL has scheme (matches scan method's naming)
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
 
-    return {
-        "target": json_data.get("target"),
-        "vulnerabilities": [
-            {
-                "type": vuln_type,
-                "severity": vuln.get("severity"),
-                "method": vuln.get("method"),
-                "path": vuln.get("path"),
-                "params": vuln.get("parameter", {})
-            }
-            for vuln_type, vuln_list in json_data.get("vulnerabilities", {}).items()
-            for vuln in vuln_list
-        ]
-    }
+        safestring = target_url.replace("://", "_").replace("/", "_")
+        file_path = base_dir / f"wapiti_{safestring}.json"
 
-def parse_nikto(json_data):
-    if isinstance(json_data, str):
-        json_data = json.loads(json_data)
+        if not file_path.exists():
+            print(f"[!] Wapiti file not found for target {target}")
+            continue
 
-    return {
-        "target": json_data.get("host"),
-        "vulnerabilities": [
-            {
-                "message": v.get("msg"),
-                "uri": v.get("uri"),
-                "references": v.get("references", [])
-            }
-            for v in json_data.get("vulnerabilities", [])
-        ]
-    }
+        try:
+            if file_path.stat().st_size == 0:
+                print(f"[!] Skipping empty Wapiti file: {file_path}")
+                continue
 
-def aggregate_webvulns(*parsed_results):
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_data = json.load(f)
 
+            if not isinstance(json_data, dict):
+                print(f"[!] Unexpected JSON format in {file_path}")
+                continue
+
+            results.append({
+                "target": json_data.get("target", target),
+                "vulnerabilities": json_data.get("vulnerabilities", [])
+            })
+
+        except json.JSONDecodeError as e:
+            print(f"[!] Invalid JSON in {file_path}: {e}")
+        except Exception as e:
+            print(f"[!] Error reading {file_path}: {e}")
+
+    return results
+
+def parse_nikto(targets):
+    """
+    Parse Nikto scan results for a given list of targets.
+    Each target's file should exist in project/scans/webtech/nikto_{target}.json.
+    Returns: [{target, vulnerabilities}, ...]
+    """
+    results = []
+    base_dir = Path(context_manager.current_project) / "scans" / "webtech"
+
+    for target in targets:
+        # Ensure URL has scheme (to match scan output naming)
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
+
+        safestring = target_url.replace("://", "_").replace("/", "_")
+        file_path = base_dir / f"nikto_{safestring}.json"
+
+        if not file_path.exists():
+            print(f"[!] Nikto file not found for target {target}")
+            continue
+
+        try:
+            if file_path.stat().st_size == 0:
+                print(f"[!] Skipping empty Nikto file: {file_path}")
+                continue
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                json_data = json.load(f)
+
+            if not isinstance(json_data, dict):
+                print(f"[!] Unexpected JSON format in {file_path}")
+                continue
+
+            vulns = []
+            for v in json_data.get("vulnerabilities", []):
+                vulns.append({
+                    "message": v.get("msg"),
+                    "uri": v.get("uri"),
+                    "references": v.get("references", [])
+                })
+
+            results.append({
+                "target": target_url,
+                "vulnerabilities": vulns
+            })
+
+        except json.JSONDecodeError as e:
+            print(f"[!] Invalid JSON in {file_path}: {e}")
+        except Exception as e:
+            print(f"[!] Error reading {file_path}: {e}")
+
+    return results
+
+
+
+def normalize_host(target_str):
+    """Extract host from target (host:port or URL)."""
+    if target_str.startswith("http"):
+        parsed = urlparse(target_str)
+        return parsed.hostname or target_str
+    return target_str.split(":")[0]
+
+def aggregate_webvulns(output_path, *parsed_results):
+    """
+    Aggregates parsed vulnerability scan results from multiple tools,
+    groups by base host, and writes the result to `output_path`.
+    """
     aggregated = {}
 
-    for parsed in parsed_results:
-        target = parsed.get("target", "unknown")
-        if target not in aggregated:
-            aggregated[target] = {
-                "target": target,
-                "vulnerabilities": []
-            }
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "results" / "webvulns_aggregated.json"
+    for result_list in parsed_results:
+        for parsed in result_list:
+            host = normalize_host(parsed.get("target", "unknown"))
+            origin_target = parsed.get("target", "unknown")
 
-        # Merge vulnerabilities/findings into a single list
-        vulns = parsed.get("vulnerabilities", [])
-        aggregated[target]["vulnerabilities"].extend(vulns)
+            if host not in aggregated:
+                aggregated[host] = {
+                    "target": host,
+                    "ports": {}
+                }
 
-    with open(f"{context_manager.current_project}/results/webvulns_aggregated.json", "w", encoding="utf-8") as f:
-        json.dump(aggregated, f, indent=2)
+            if origin_target not in aggregated[host]["ports"]:
+                aggregated[host]["ports"][origin_target] = []
+
+            vulns = parsed.get("vulnerabilities", [])
+
+            # Convert Wapiti string findings into dicts for uniformity
+            normalized_vulns = []
+            for v in vulns:
+                if isinstance(v, str):
+                    normalized_vulns.append({
+                        "message": v,
+                        "uri": None,
+                        "references": []
+                    })
+                elif isinstance(v, dict):
+                    normalized_vulns.append(v)
+                else:
+                    continue
+
+            # Deduplicate per origin_target
+            existing = aggregated[host]["ports"][origin_target]
+            for vuln in normalized_vulns:
+                if vuln not in existing:
+                    existing.append(vuln)
+
+    # Write aggregated results to file
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(list(aggregated.values()), f, indent=2)
+
+    print(f"[+] Aggregated web vulnerabilities written to {output_path}")

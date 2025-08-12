@@ -23,10 +23,10 @@ def what_wapp_fingerprint(args):
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
-    whatwebresults = parse_web_targets(alivetargets,subargs)
+    parsedwebtargets = parse_web_targets(alivetargets,subargs)
     if args.verbose > 2:
-        print(f"parsed web targets for fingerprint: {whatwebresults}")
-    whatwebresults = whatwebexecutor(whatwebresults) #Scan. Only return web targets that were actually scanned
+        print(f"parsed web targets for fingerprint: {parsedwebtargets}")
+    whatwebresults = whatwebexecutor(parsedwebtargets) #Scan. Only return web targets that were actually scanned
     #Whatweb
     finalwebtechresults = parse_webtechresults(whatwebresults, f"{context_manager.current_project}/results/whatweb_aggregated.json", args.overwrite)
 
@@ -42,16 +42,19 @@ def webvuln(args):
 
     if args.verbose > 2:
         print(args)
-        print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
+        print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
-    parsedtargets = parse_web_targets(subargs, alivetargets)
+    parsedtargets = parse_web_targets(alivetargets,subargs)
+    if args.verbose > 2:
+        print(f"parsed web targets for fingerprint: {parsedtargets}")
     #Make wapiti and nikto return the correct dicts to parse
     wapiti_output = run_wapiti_scan(parsedtargets)
+    print(wapiti_output)
     parsed_wapiti = parse_wapiti(wapiti_output)
     niktooutput = run_nikto_scan(parsedtargets)
     parsed_nikto = parse_nikto(niktooutput)
-    aggregate_webvulns(parsed_wapiti,parsed_nikto)
+    aggregate_webvulns(None,parsed_wapiti,parsed_nikto)
 def cmsscan(args):
     """
     Scan given targets for CMS (Wordpress, drupal) vulnerabilities

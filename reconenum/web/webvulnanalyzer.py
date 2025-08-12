@@ -9,6 +9,7 @@ from core import context_manager
 def run_wapiti_scan(args, disable_ssl=False):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
     output_dir.mkdir(parents=True, exist_ok=True)
+    validtargets = []
 
     for target in list(args):
         # Ensure URL has scheme
@@ -25,15 +26,15 @@ def run_wapiti_scan(args, disable_ssl=False):
             with open(output_path, 'w+') as file:
                 file.write("")
         except Exception as e:
-            print(f"Exception opening {output_path.name}: {e}")
+            print(f"[!] Exception opening {output_path.name}: {e}")
             continue
 
         cmd = [
-            "wapiti","-u", target_url,
+            "wapiti", "-u", target_url,
             "--scope", "domain",
-            "--depth",  "5",
+            "--depth", "5",
             "--max-links-per-page", "100",
-            "--format","json",
+            "--format", "json",
             "--output", str(output_path),
             "--flush-session", "--color"
         ]
@@ -45,15 +46,21 @@ def run_wapiti_scan(args, disable_ssl=False):
 
         try:
             result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+
+            # If Wapiti produces any stderr output, consider scan failed and remove output file
             if result.stderr:
                 print(result.stderr.decode())
-                os.remove(output_path)
+                if output_path.exists():
+                    output_path.unlink()
+            else:
+                # No stderr, assume valid target
+                validtargets.append(target)
+
         except subprocess.CalledProcessError as e:
             print(f"[!] Wapiti scan failed on {target_url}: {e}")
-            os.remove(output_path)
-
-    return
-
+            if output_path.exists():
+                output_path.unlink()
+    return validtargets
 
 def run_nikto_scan(args, force_ssl=False):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
@@ -101,7 +108,7 @@ def run_nikto_scan(args, force_ssl=False):
         print(f"[+] Running Nikto on {target_url}...")
 
 
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=False)
         if result.returncode == 1:
             validtargets.append(target)
         if result.stderr:
