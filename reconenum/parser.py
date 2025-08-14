@@ -30,7 +30,6 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
             ips = targetdata
         else:
             ips = context_manager.targets
-
     #If ips still empty (due to being auto or not having previ ctx)
     if not ips:
 
@@ -52,6 +51,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                 parsed = urlparse(part)
                 # If it got scheme (shceme://), check the ip and accept it if its valid
                 if parsed.scheme:
+                    test_parse = parsed
                     host = parsed.hostname
                     if host:
                         try:
@@ -64,42 +64,44 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                         if verbose>0:
                             print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
                 else:
-                    #IF not check port. Port only works if ther eis a scheme present. Can be real or not
+                    #IF not check port. Port only works if there is a scheme present. Can be real or not
                     test_parse = urlparse(f'bogus://{part}')
-                    if test_parse.port:
-                        host = parsed.hostname
-                        if host:
+
+                if test_parse.port:
+                    host = test_parse.hostname
+                    print(host)
+                    if host:
+                        try:
+                            ip = ipaddress.ip_address(host)
+                            ips.append(str(entry))
+                        except ValueError as e:
+                            if verbose > 0:
+                                print(
+                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                    else:
+                        if verbose > 0:
+                            print(
+                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+
+                else:
+                    #If no port and no scheme directly check the IP
+                    host = test_parse.hostname
+                    path = test_parse.path
+                    if host:
+                        if "localhost" in host:
+                            ips.append('127.0.0.1'+path)
+                        else:
                             try:
                                 ip = ipaddress.ip_address(host)
                                 ips.append(str(ip))
                             except ValueError as e:
                                 if verbose > 0:
                                     print(
-                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
-                        else:
-                            if verbose > 0:
-                                print(
-                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
-
+                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from Skipping'{part}': {e}.{bcolors.RESET}")
                     else:
-                        #If no port and no scheme directly check the IP
-                        host = test_parse.hostname
-                        path = test_parse.path
-                        if host:
-                            if "localhost" in host:
-                                ips.append('127.0.0.1'+path)
-                            else:
-                                try:
-                                    ip = ipaddress.ip_address(host)
-                                    ips.append(str(ip))
-                                except ValueError as e:
-                                    if verbose > 0:
-                                        print(
-                                        f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}.{bcolors.RESET}")
-                        else:
-                            if verbose > 0:
-                                print(
-                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+                        if verbose > 0:
+                            print(
+                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
     if not ips:
         print(f"\n{bcolors.FAIL}[-] No valid IPs given. Aborting{bcolors.RESET}")
         exit(-1)
@@ -528,8 +530,13 @@ def normalize_host(target_str):
     return target_str.split(":")[0]
 
 
-#check why it does or doesnt get all the trgets then cms and fuzz""!!!"!
 def aggregate_webvulns(output_path, parsedtargets):
+    """
+    Aggreagate and summarize the results of wapiti and nikto under one file
+    :param output_path:
+    :param parsedtargets:
+    :return:
+    """
     aggregated = {}
 
     if not output_path:
@@ -604,3 +611,58 @@ def aggregate_webvulns(output_path, parsedtargets):
         json.dump(output_data, f, indent=2)
 
     print(f"[+] Aggregated web vulnerabilities written to {output_path}")
+
+def parse_fuzzer(output_path, parsedtargets):
+    aggregated = {}
+
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "results" / "fuzzing_aggregated.json"
+    else:
+        output_path = Path(output_path)
+
+    for target in parsedtargets:
+        print(f"Processing target: {target}")
+        target_url = target if target.startswith("http") else "http://" + target
+        safestring = target_url.replace("://", "_").replace("/", "_")
+
+        fuzzfile = Path(context_manager.current_project) / "scans" / "fuzz" / f"fuzzing_{safestring}.txt"
+
+        # Initialize findings for this target
+        findings = {}
+
+        # Attempt to read the fuzzing results
+        try:
+            with open(fuzzfile, "r", encoding="utf-8") as f:
+                fuzz_data = json.load(f)
+
+                # Extract relevant information
+                commandline = fuzz_data.get("commandline", "N/A")
+                time = fuzz_data.get("time", "N/A")
+                output_file = fuzz_data["config"].get("outputfile", "N/A")
+                url = fuzz_data["config"].get("url", "N/A")
+                wordlist = fuzz_data["config"]["inputproviders"][0].get("value", "N/A")
+                recursion_depth = fuzz_data["config"].get("recursion_depth", "N/A")
+                results_count = len(fuzz_data.get("results", []))
+
+                # Aggregate findings
+                findings = {
+                    "Command Line": commandline,
+                    "Time": time,
+                    "Output File": output_file,
+                    "Target URL": url,
+                    "Wordlist Used": wordlist,
+                    "Recursion Depth": recursion_depth,
+                    "Results Count": results_count
+                }
+
+                # Store findings in the aggregated dictionary
+                aggregated[target_url] = findings
+
+        except (FileNotFoundError, json.JSONDecodeError):
+            print(f"Error reading file: {fuzzfile}. Skipping this target.")
+
+    # Write the aggregated results to the output file
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(aggregated, f, indent=2)
+
+    print(f"[+] Aggregated fuzzing data written to {output_path}")

@@ -1,7 +1,6 @@
 from core import context_manager
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
-from reconenum.parser import parse_ip_inputs, target_web_sorter, parse_webtechresults, parse_web_targets, parse_wapiti, \
-    parse_nikto, aggregate_webvulns
+from reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, parse_fuzzer
 from reconenum.nmap.nmap import parsealivehosts
 from reconenum.web.fuzzer import run_fuzzing
 from reconenum.web.webtechanalyzer import whatwebexecutor
@@ -88,7 +87,8 @@ def basicfuzzing(args):
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
-    run_fuzzing(parsedtargets,args)
+    run_fuzzing(parsedtargets,args) #Perform fuzzing
+    parse_fuzzer(None,parsedtargets) #Generate summary
 
 def initwebscanargparser(recon_sub, commonparser):
     # Main "web" command parser

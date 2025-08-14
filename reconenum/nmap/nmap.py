@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import subprocess
+from urllib.parse import urlparse
 
 from core import context_manager
 from core.config import bcolors
@@ -16,13 +17,28 @@ def run_nmap_scan(nmap_args: list, verbose : int, output_prefix="scan"):
     # Define the XML output path
     xml_path = f"{context_manager.current_project}/scans/nmap/xml/{output_prefix}-{scandate}.xml"
     gopath = subprocess.run(["go", "env", "GOPATH"], capture_output=True, text=True).stdout.strip()
-
+    nmaptargetlist =[]
+    for element in nmap_args:
+        if not type(element) == list:
+            nmaptargetlist.append(element)
+            continue
+        for target in element:
+            parsed = urlparse(target)
+            if not parsed.scheme:
+                parsed = urlparse("bogus://" + target)
+            if parsed.port:
+                nmaptargetlist.append(f"{parsed.hostname}")
+                print(parsed.hostname)
+            else:
+                nmaptargetlist.append(target)
+                print(target)
     # Run nmap and save the output to the XML file
     try:
+        nmaptargetlist.remove(nmaptargetlist[0])
         if verbose > 0:
-            print(f"[+] Running Nmap: {' '.join(['nmap'] + nmap_args + ['-oX', xml_path])}{bcolors.GRAY}")
-        subprocess.run(["nmap"] + nmap_args + ["-oX", xml_path], capture_output=False if verbose > 1 else True, check=True)
-        target= ''.join(nmap_args[1:]).replace("/","-",1)
+            print(f"[+] Running Nmap: {' '.join(['nmap'] + nmaptargetlist + ['-oX', xml_path])}{bcolors.GRAY}")
+        subprocess.run(["nmap"] + nmaptargetlist + ["-oX", xml_path], capture_output=False if verbose > 1 else True, check=True)
+        target= ''.join(nmaptargetlist).replace("/","-",1)
         # Define JSON output path
         json_output_path =  f"{context_manager.current_project}/scans/nmap/json/{output_prefix}_{target}.json"
         try:
@@ -66,7 +82,7 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
     targets = list(all_up_hosts.keys())
     print(f"{bcolors.OKCYAN}[+] Performing service detection on discovered hosts: {targets}\n...")
     args = ["-sVC","-Pn"]
-    args += targets
+    args.append(targets)
     full_scan = run_nmap_scan(args, verbose,"full_scan")
     aggregated_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
 
@@ -122,7 +138,7 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
     # STEP 1 – Basic Host Discovery (ping scan)
     print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
     args = ["-sn"]
-    args += ip_range
+    args.append(ip_range)
     host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
     if host_discovery_results.get("Host", []):
         host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
@@ -150,4 +166,8 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
             all_up_hosts[k] = v
     setTargets(all_up_hosts, is_overwrite)
     print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}")
+    if (len(all_up_hosts) == 0):
+        print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
+        print(f"---------------------------------{bcolors.RESET}\n")
+        exit(3)
     return all_up_hosts
