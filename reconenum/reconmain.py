@@ -46,11 +46,9 @@ def initreconenumsubparsers(menusubparser, commonparser):
     # protocol submenus
     initwebscanargparser(recon_sub, commonparser)
 
+    initdnsscanargparser(recon_sub, commonparser)
     p_smb = recon_sub.add_parser("smb", parents=[commonparser], help="SMB-specific enumeration")
     p_smb.set_defaults(func=cmd_recon_smb)
-
-    p_dns = recon_sub.add_parser("dns", parents=[commonparser], help="DNS analysis tools")
-    p_dns.set_defaults(func=cmd_recon_dns)
 
     p_ssh = recon_sub.add_parser("ssh", parents=[commonparser], help="SSH version/key gathering")
     p_ssh.set_defaults(func=cmd_recon_ssh)

@@ -2,7 +2,29 @@ from core import context_manager
 import subprocess
 from pathlib import Path
 
-def run_fuzzing(targets, args):
+
+def fuzzyfind_dictionaries():
+    """
+    Uses fzf to interactively select a wordlist from /usr/share/wordlists.
+    """
+
+    result = subprocess.run(
+        [
+            "bash", "-c",
+            "find -L /usr/share/wordlists -type f | "
+            "fzf --preview 'head -n 20 {}' --preview-window=down:wrap"
+        ],
+        capture_output=False,
+        text=True,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    wordlist = result.stdout.strip()
+    return wordlist
+
+
+def run_directory_fuzzing(targets, args):
     """Fuzzes targets.
     Modes:
       1. --common   => use fixed common dictionary.
@@ -73,22 +95,39 @@ def run_fuzzing(targets, args):
     return valid_targets
 
 
-def fuzzyfind_dictionaries():
-    result = subprocess.run(
-        [
-            "bash", "-c",
-            "find -L /usr/share/wordlists -type f | "
-            "fzf --preview 'head -n 20 {}' --preview-window=down:wrap"
-        ],
-        capture_output=False,
-        text=True,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    wordlist = result.stdout.strip()
-    return wordlist
 
-#Check the web sorter, then:
-#Check the whatweb context to run it on the desired ports
-#Here use the ffuf +fzf thing and it is done!
+
+def run_domain_fuzzing(targets, args):
+    """Fuzzes domains using ffuf."""
+    output_dir = Path(context_manager.current_project) / "scans" / "fuzz"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_targets = []
+
+    for target in targets:
+        if not target.startswith("http"):
+            target_url = "http://" + target
+        else:
+            target_url = target
+
+        safestring = target_url.replace("://", "_").replace("/", "_")
+        output_path = output_dir / f"domain_fuzzing_{safestring}.txt"
+
+        cmd = [
+            "ffuf",
+            "-u", f"{target_url}/FUZZ",
+            "-w", "/usr/share/wordlists/dns.txt",
+            "-o", str(output_path),
+            "-of", "json",
+            "-fc", "404",  # Exclude 404 responses
+        ]
+
+        print(f"[+] Running domain fuzzing on {target_url}...")
+
+        try:
+            subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+            valid_targets.append(target_url)
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Domain fuzzing failed on {target_url}: {e}")
+
+    return valid_targets
