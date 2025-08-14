@@ -149,5 +149,5 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
         if k not in all_up_hosts:
             all_up_hosts[k] = v
     setTargets(all_up_hosts, is_overwrite)
-    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}\n")
+    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}")
     return all_up_hosts

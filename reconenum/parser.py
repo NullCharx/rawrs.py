@@ -418,6 +418,7 @@ def parse_web_targets(alivetargets, inputtargets):
     filteredtargets = filter_alive_targets(list(alivetargets.keys()), inputtargets)
     # Then probably get alivetargets,finaldata and parsedtargets into a common parse method to not clog everything in various methods
     parsedtargets = target_web_sorter(filteredtargets)  # Parse web identified targets
+    print(f"[+] Web enabled targets: {len(parsedtargets)}\n")
     return parsedtargets
 
 def parse_wapiti(targets, output_path=None):

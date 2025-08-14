@@ -255,10 +255,27 @@ def init_environment(verbosity,config):
         except Exception:
             print(f"{bcolors.FAIL}[!] Git couldn't be installed. Please manually install git as its needed to install SecLists.{bcolors.RESET}")
             exit(1)
+
+        if os.path.exists("/usr/share/wordlists/"):
+            try:
+                result = subprocess.run(
+                    ["ln", "-s", "/usr/share/SecLists", "SecLists.lst"],
+                    capture_output=False,
+                    cwd="/usr/share/wordlists/"
+                )
+            except Exception:
+                print(
+                    f"{bcolors.FAIL}[!] Error soft linking seclists to /etc/share/wordlists/. This might cause errors {bcolors.RESET}")
+
     else:
         if verbosity > 2:
             print(f"{bcolors.OKGREEN}[+] SecList detected. Checking and installing updates. . .{bcolors.RESET}")
         try:
+            result = subprocess.run(
+                ["git", "reset", "HEAD", "--hard"],
+                capture_output=False,
+                cwd="/usr/share/SecLists"
+            )
             result = subprocess.run(
                 ["git", "pull"],
                 capture_output=False,
@@ -343,15 +360,20 @@ def init_environment(verbosity,config):
             print(f"{bcolors.FAIL}[-] wpscan is not installed or not in PATH. Trying to install.{bcolors.RESET}")
         try:
             result = subprocess.run(
+                ["apt", "install", " build-essentials libxml2 libxml2-dev libxslt1-dev ruby-dev  libgmp-dev zlib1g-devlibcurl4=7.88.1-10+deb12u14 libcurl4-openssl-dev"]
+            )
+
+            result = subprocess.run(
                 ["gem", "install", "wpscan activesupport"],
                 capture_output=False,
             )
-            result = subprocess.run(
-                ["apt", "install", " build-essential libxml2 libxml2-dev libxslt1-dev ruby-dev  libgmp-dev zlib1g-devlibcurl4=7.88.1-10+deb12u14 libcurl4-openssl-dev"]
-            )
+
         except Exception:
             print(
-                f"{bcolors.FAIL}[!] wpscan couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+                f"{bcolors.FAIL}[!] wpscan couldn't be installed. Please manually install go as its needed by some subtools."
+                f"Try the following commands manually:"
+                f"sudo apt install build-essential libxml2 libxml2-dev libxslt1-dev ruby-dev libgmp-dev zlib1g-dev libcurl4=7.88.1-10+deb12u14 libcurl4-openssl-dev"
+                f"sudo gem install wpscan activesupport\n{bcolors.RESET}")
             exit(1)
         else:
             if verbosity > 2:
