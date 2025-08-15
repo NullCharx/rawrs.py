@@ -6,6 +6,12 @@ from reconenum.nmap.nmap import full_discovery
 from reconenum.parser import parse_ip_inputs
 from reconenum.web.webscanner import initwebscanargparser
 
+#basicamente: Termina wp vulnerable parser
+#Ternina el parser de dnsrecon zone tranfer
+#ssh anon  logiun check
+#ftp anon login check
+#(haz los checks que tienes bbqq)
+
 
 def initreconenumsubparsers(menusubparser, commonparser):
     """

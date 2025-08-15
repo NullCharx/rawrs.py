@@ -26,7 +26,7 @@ def standard_ip_query(targets, nameserver=None):
         output_path = output_dir / f"dnsstdquery_{safestring}.json"
         cmd = ["dnsrecon", "-t", "std", "-d", target, "-j", str(output_path)] + nameserverarg
 
-        print(f"[+] Scanning {target} with dnsrecon via {nameserver} nameserver...\n")
+        print(f"[+] Scanning {target} with dnsrecon...")
         try:
             subprocess.run(cmd, check=True)
             print(f"[+] Finished scanning {target}")
@@ -41,55 +41,27 @@ def is_dns_server(address):
     except Exception:
         return False
 
+def check_zone_transfer(targets, nameserver=None, isdnsservertarget = False):
+    """
+    Checks the ns of a target domain for zone transfer.
+    NOTE: I intended to make an option to directly check a dnsserver for zone transfer, but it is not implemented yet
+    SINCE i dont know how a successful zone transfer looks like and i can't possibly test in a controlled environment.
+    :param targets: List of target domains or IPs.
+    :return: None
+    """
+    output_dir = Path(context_manager.current_project) / "results" / "dns_zone_transfer_results.json"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
+    nameserverarg = ["-n", nameserver] if nameserver else ["-n", "8.8.8.8"]
 
-def enumerate_subdomains(domain, subdomain_list):
-    found_subdomains = []
-    for subdomain in subdomain_list:
-        full_domain = f"{subdomain}.{domain}"
+    for target in targets:
+        safestring = target.replace("://", "_").replace("/", "_")
+        output_path = output_dir / f"dnsstdquery_{safestring}.json"
+        cmd = ["dnsrecon", "-t", "std", "-d", target, "-j", str(output_path)] + nameserverarg
+
+        print(f"[+] Scanning {target} with dnsrecon via {nameserver} nameserver...\n")
         try:
-            dns.resolver.resolve(full_domain, 'A')
-            found_subdomains.append(full_domain)
-        except Exception:
-            continue
-    return found_subdomains
-
-
-
-def query_dns_records(domain, record_type):
-    try:
-        records = dns.resolver.resolve(domain, record_type)
-        return [str(record) for record in records]
-    except Exception as e:
-        return str(e)
-
-
-
-def reverse_dns_lookup(ip_address):
-    try:
-        reverse_name = dns.reversename.from_address(ip_address)
-        domain_name = dns.resolver.resolve(reverse_name, 'PTR')
-        return [str(name) for name in domain_name]
-    except Exception as e:
-        return str(e)
-
-
-
-def get_soa_record(domain):
-    try:
-        soa_record = dns.resolver.resolve(domain, 'SOA')
-        return [str(record) for record in soa_record]
-    except Exception as e:
-        return str(e)
-
-
-def enumerate_subdomains(domain, subdomain_list):
-    found_subdomains = []
-    for subdomain in subdomain_list:
-        full_domain = f"{subdomain}.{domain}"
-        try:
-            dns.resolver.resolve(full_domain, 'A')
-            found_subdomains.append(full_domain)
-        except Exception:
-            continue
-    return found_subdomains
+            subprocess.run(cmd, check=True)
+            print(f"[+] Finished scanning {target}")
+        except subprocess.CalledProcessError as e:
+            print(f"[!] Error scanning {target}: {e}"

@@ -41,6 +41,7 @@ def dns_domain_discovery(args):
         print(args)
         print(f"[recon:dns domain tools] project={args.project} verbose={args.verbose}")
     parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+    print("This tool would use dnsrecon to brutefoce TLDs on the base domain, and then bruteforce subdomains with a wordlist, and search for subdomains on bing.")
 
 def reverse_lookup(args):
     """Reverse DNS lookup for IPs or CIDRs"""
@@ -52,6 +53,7 @@ def reverse_lookup(args):
         print(args)
         print(f"[recon:dns reverse ] project={args.project} verbose={args.verbose}")
     parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+    print("This tool would perform reverse DNS lookups for the given IPs or CIDRs.")
 
 def zone_transfer(args):
     """Uses dnsrecon to bruteforce subdomains using a wordlist. And also searches on subdomains on bing"""
