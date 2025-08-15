@@ -620,6 +620,9 @@ def parse_fuzzer(output_path, parsedtargets):
     else:
         output_path = Path(output_path)
 
+    # Status codes to filter/exclude by default (uninteresting)
+    filter_statuses = {204, 301, 302, 307, 401, 403, 405}
+
     for target in parsedtargets:
         print(f"Processing target: {target}")
         target_url = target if target.startswith("http") else "http://" + target
@@ -627,41 +630,49 @@ def parse_fuzzer(output_path, parsedtargets):
 
         fuzzfile = Path(context_manager.current_project) / "scans" / "fuzz" / f"fuzzing_{safestring}.txt"
 
-        # Initialize findings for this target
-        findings = {}
-
-        # Attempt to read the fuzzing results
         try:
             with open(fuzzfile, "r", encoding="utf-8") as f:
                 fuzz_data = json.load(f)
 
-                # Extract relevant information
+                # Basic config info
                 commandline = fuzz_data.get("commandline", "N/A")
                 time = fuzz_data.get("time", "N/A")
-                output_file = fuzz_data["config"].get("outputfile", "N/A")
-                url = fuzz_data["config"].get("url", "N/A")
-                wordlist = fuzz_data["config"]["inputproviders"][0].get("value", "N/A")
-                recursion_depth = fuzz_data["config"].get("recursion_depth", "N/A")
-                results_count = len(fuzz_data.get("results", []))
+                output_file = fuzz_data.get("config", {}).get("outputfile", "N/A")
+                wordlist = fuzz_data.get("config", {}).get("inputproviders", [{}])[0].get("value", "N/A")
+                recursion_depth = fuzz_data.get("config", {}).get("recursion_depth", "N/A")
 
-                # Aggregate findings
+                # Extract results
+                results = fuzz_data.get("results", [])
+                interesting_results = []
+
+                for r in results:
+                    status = r.get("status", "N/A")
+                    path = r.get("input", {}).get("FUZZ", "N/A")   # fixed extraction
+                    full_url = r.get("url", "N/A")                  # optional full URL
+                    if status not in filter_statuses:
+                        interesting_results.append({
+                            "Path": path,
+                            "URL": full_url,
+                            "Status": status
+                        })
+
                 findings = {
                     "Command Line": commandline,
                     "Time": time,
                     "Output File": output_file,
-                    "Target URL": url,
+                    "Target URL": target_url,
                     "Wordlist Used": wordlist,
                     "Recursion Depth": recursion_depth,
-                    "Results Count": results_count
+                    "Results Count": len(results),
+                    "Interesting Results": interesting_results
                 }
 
-                # Store findings in the aggregated dictionary
                 aggregated[target_url] = findings
 
         except (FileNotFoundError, json.JSONDecodeError):
             print(f"Error reading file: {fuzzfile}. Skipping this target.")
 
-    # Write the aggregated results to the output file
+    # Write aggregated results
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(aggregated, f, indent=2)
 

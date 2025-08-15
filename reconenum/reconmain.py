@@ -1,6 +1,7 @@
 import argparse
 
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
+from reconenum.dns.dnscore import initdnsscanargparser
 from reconenum.nmap.nmap import full_discovery
 from reconenum.parser import parse_ip_inputs
 from reconenum.web.webscanner import initwebscanargparser
@@ -47,6 +48,8 @@ def initreconenumsubparsers(menusubparser, commonparser):
     initwebscanargparser(recon_sub, commonparser)
 
     initdnsscanargparser(recon_sub, commonparser)
+
+
     p_smb = recon_sub.add_parser("smb", parents=[commonparser], help="SMB-specific enumeration")
     p_smb.set_defaults(func=cmd_recon_smb)
 

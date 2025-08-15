@@ -71,7 +71,8 @@ def run_directory_fuzzing(targets, args):
             "-w", wordlist,
             "-o", str(output_path),
             "-of", "json",
-            "-fc", "404",  # Exclude 404 responses
+            #"-mc" , "200,204,301,302,307,401,403,405",  # Match these status codes
+            "-fc", "400,404",  # Exclude 404 responses
             "-recursion",  # Enabling recursion
             "-recursion-depth", "3",  # Setting recursion depth
             "-maxtime-job", "60",  # Setting maximum time for each job

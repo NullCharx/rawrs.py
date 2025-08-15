@@ -46,7 +46,6 @@ def webvuln(args):
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
-    print(parsedtargets)
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedtargets}")
     #Make wapiti and nikto return the correct dicts to parse
@@ -79,7 +78,6 @@ def basicfuzzing(args):
     """
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
-    print(args)
 
     if args.verbose > 2:
         print(args)

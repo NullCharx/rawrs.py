@@ -1,58 +1,87 @@
-import datetime
-import json
-import os
-import subprocess
-from urllib.parse import urlparse
-
 from core import context_manager
 from core.config import bcolors
 from core.context_manager import saveTargetContext, setTargets
 from reconenum.parser import parse_nmap_full_discovery, parse_nmap_host_discovery
 
+from urllib.parse import urlparse
+import datetime
+import subprocess
+import json
+import os
 
-def run_nmap_scan(nmap_args: list, verbose : int, output_prefix="scan"):
+def run_nmap_scan(nmap_args: list, verbose: int, output_prefix="scan"):
     # Generate timestamp for unique file naming
     scandate = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # Define the XML output path
     xml_path = f"{context_manager.current_project}/scans/nmap/xml/{output_prefix}-{scandate}.xml"
-    gopath = subprocess.run(["go", "env", "GOPATH"], capture_output=True, text=True).stdout.strip()
-    nmaptargetlist =[]
+
+    # Get Go path for nmap-formatter
+    gopath = subprocess.run(
+        ["go", "env", "GOPATH"],
+        capture_output=True,
+        text=True
+    ).stdout.strip()
+
+    nmaptargetlist = []
+
+    # --- Handle all possible input types (str list, dict)---
     for element in nmap_args:
-        if not type(element) == list:
-            nmaptargetlist.append(element)
+        if isinstance(element, dict):
+            # Parsed nmap JSON - keys are IPs
+            nmaptargetlist.extend(element.keys())
             continue
-        for target in element:
-            parsed = urlparse(target)
-            if not parsed.scheme:
-                parsed = urlparse("bogus://" + target)
-            if parsed.port:
-                nmaptargetlist.append(f"{parsed.hostname}")
-                print(parsed.hostname)
-            else:
-                nmaptargetlist.append(target)
-                print(target)
-    # Run nmap and save the output to the XML file
+
+        if isinstance(element, list):
+            for target in element:
+                parsed = urlparse(target)
+                if not parsed.scheme:
+                    parsed = urlparse("bogus://" + target)
+                if parsed.port:
+                    nmaptargetlist.append(parsed.hostname)
+                    if verbose > 1:
+                        print(parsed.hostname)
+                else:
+                    nmaptargetlist.append(target)
+                    if verbose > 1:
+                        print(target)
+            continue
+
+        # Fallback — just convert to string and add
+        nmaptargetlist.append(str(element))
+
+    # --- Run nmap ---
     try:
-        nmaptargetlist.remove(nmaptargetlist[0])
+        # Remove the first element if it's an option like "-sn"
+        if nmaptargetlist and nmaptargetlist[0].startswith('-'):
+            nmaptargetlist = nmaptargetlist[1:]
+
         if verbose > 0:
             print(f"[+] Running Nmap: {' '.join(['nmap'] + nmaptargetlist + ['-oX', xml_path])}{bcolors.GRAY}")
-        subprocess.run(["nmap"] + nmaptargetlist + ["-oX", xml_path], capture_output=False if verbose > 1 else True, check=True)
-        target= ''.join(nmaptargetlist).replace("/","-",1)
-        # Define JSON output path
-        json_output_path =  f"{context_manager.current_project}/scans/nmap/json/{output_prefix}_{target}.json"
+
+        subprocess.run(
+            ["nmap"] + nmaptargetlist + ["-oX", xml_path],
+            capture_output=False if verbose > 1 else True,
+            check=True
+        )
+
+        # JSON output path
+        target = ''.join(nmaptargetlist).replace("/", "-", 1)
+        json_output_path = f"{context_manager.current_project}/scans/nmap/json/{output_prefix}_{target}.json"
+
+        # Remove old JSON if exists
         try:
             os.remove(json_output_path)
         except OSError:
             pass
+
         # Run nmap-formatter to convert XML to JSON
-        result = subprocess.run(
+        subprocess.run(
             [f"{gopath}/bin/nmap-formatter", "json", xml_path, "-f", json_output_path],
             capture_output=False if verbose > 1 else True,
             text=True,
             check=True
         )
-
 
         # Load JSON data
         with open(json_output_path, 'r') as file:
@@ -63,9 +92,10 @@ def run_nmap_scan(nmap_args: list, verbose : int, output_prefix="scan"):
     except subprocess.CalledProcessError as e:
         print(f"{bcolors.FAIL}[!] Error during scan or formatting: {e.stderr}{bcolors.RESET}")
         return None
+
     finally:
-        # Optional: Clean up the temporary XML file if you don't need it anymore
-        if os.path.exists(xml_path) and not output_prefix == "full_scan":
+        # Cleanup XML unless it's a full scan
+        if os.path.exists(xml_path) and output_prefix != "full_scan":
             os.remove(xml_path)
 
 

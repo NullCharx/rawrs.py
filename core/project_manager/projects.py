@@ -38,7 +38,13 @@ def create_project(name, verbosity, config):
                 (project_path / folder / "webtech").mkdir()
                 (project_path / folder / "fuzz").mkdir()
                 (project_path / folder / "cms").mkdir()
-
+                (project_path / folder / "dns").mkdir()
+                (project_path / folder / "ftp").mkdir()
+                (project_path / folder / "ssh").mkdir()
+                (project_path / folder / "smtp").mkdir()
+                (project_path / folder / "snmp").mkdir()
+                (project_path / folder / "smb").mkdir()
+                (project_path / folder / "win").mkdir()
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
             "targets": [],
