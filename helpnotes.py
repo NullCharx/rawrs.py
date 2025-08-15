@@ -3,21 +3,6 @@ import sys
 
 from reconenum import reconmain
 
-general_help = '''
-Really Awesome Recon and Scan Tool (RAWRS)
-
-A tool intended to automate repetitive recon and scanning tasks,
-especially focused on OSCP-style workflows.
-
-Main subcommands:
-  rawrs.py --gui      -> Launch the Terminal GUI mode (experimental)
-
-  rawrs.py recon       -> Port and service scanning utilities
-  rawrs.py tunnel     -> Tunneling pivoting and proxy setup
-  rawrs.py transfer   -> Transfer tools between host and victim
-  rawrs.py osint      -> Passive information gathering
-'''
-
 
 
 

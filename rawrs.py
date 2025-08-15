@@ -4,13 +4,11 @@ import argparse
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
-from core import context_manager
 from core.config import bcolors, load_global_config, save_global_config
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from core.project_manager.projects import create_project, checkdirectoryisproject
-from reconenum.reconmain import initreconenumsubparsers, cmd_recon_nmapscan
+from reconenum.reconmain import initreconenumsubparsers
 
 splash = ["""
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⡇⠀⠀⠀⠀⠚⠉⠈⠓⣦⡀⠀⠀⠀⠀⠀⠀⡿⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀
@@ -381,7 +379,20 @@ def init_environment(verbosity,config):
         result = subprocess.run(
             ["wpscan", "--update"]
         )
-
+    if not shutil.which("dnsrecon"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] dnsrecon is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["apt", "install", "dnsrecon"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] dnsrecon couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] dnsrecon installed{bcolors.RESET}")
     #Check wpscan command somewhere. THen droppescan.
     #Create default project
     if not checkdirectoryisproject("cwd"):

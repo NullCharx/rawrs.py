@@ -13,12 +13,18 @@ from core.config import bcolors
 """
 Parsing of any arguments or command output of any of the subtools go in this file
 """
-def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False):
+def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False, parsedomains: bool = False, domainsonly: bool = False):
 
     """
-    Takes a list with one element (e.g., a CIDR or comma-separated IPs)
-    or multiple elements (e.g., plain IP strings), and returns a list of IPs.
+    Takes a list with one element (e.g., a CIDR one IP URL or domain)
+    or multiple elements (e.g., plain IP domain or URL strings), and returns a list of IPs or domains if parsedomains is true
     CIDRs are expanded into all contained IPs.
+    :param input_string: A single string or a list of strings containing IPs, CIDRs, URLs, or domains.
+    :param isauto: If true, will try to get the targets from the context manager (previous nmap scan or context targets)
+    :param verbose: If true, will print verbose output for debugging.
+    :param parsedomains: If true, will parse domains as well, not just IPs or IP URLs.
+    :param domainsonly: If true, will parse domains exclusively, ignoring IPs and URLs.
+    :return: A list of correctly parsed IPS and /or URLS or domains
     """
     #Every tool should call loadProjectContextOnMemory() in its argument handler
     # so it doesnt need to be read from file in every tool
@@ -39,7 +45,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
         for entry in input_string:
             parts = [p.strip() for p in entry.split(',') if p.strip()]
             for part in parts:
-                # Handle CIDR first
+                # Handle CIDR first. If it is, return it immediately only and do not check for further parsing
                 if '/' in part and '://':
                     try:
                         ipaddress.ip_network(part, strict=False)
@@ -50,26 +56,26 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                 # Parrse as url
                 parsed = urlparse(part)
                 # If it got scheme (shceme://), check the ip and accept it if its valid
+                checkedip = None
                 if parsed.scheme:
                     test_parse = parsed
                     host = parsed.hostname
                     if host:
                         try:
                             ip = ipaddress.ip_address(host)
-                            ips.append(str(ip))
+                            checkedip = str(ip)
                         except ValueError as e:
                             if verbose > 0:
-                                print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                                print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}. Skipping{bcolors.RESET}")
                     else:
                         if verbose>0:
-                            print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+                            print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}. Skipping{bcolors.RESET}")
                 else:
                     #IF not check port. Port only works if there is a scheme present. Can be real or not
                     test_parse = urlparse(f'bogus://{part}')
 
                 if test_parse.port:
                     host = test_parse.hostname
-                    print(host)
                     if host:
                         try:
                             ip = ipaddress.ip_address(host)
@@ -95,17 +101,21 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False)
                                 ip = ipaddress.ip_address(host)
                                 ips.append(str(ip))
                             except ValueError as e:
-                                if verbose > 0:
-                                    print(
-                                    f"\n{bcolors.FAIL}[-] Invalid IP address extracted from Skipping'{part}': {e}.{bcolors.RESET}")
-                    else:
-                        if verbose > 0:
+                                # If all checks fails, assume its a domain (non-ip) if allownonip is True for things tools like dns queries.
+                                # Otherwise skip it
+                                if parsedomains:
+                                    print(f"\n{bcolors.WARNING}[-] Non-IPs expected: Assuming {part} is a domain.{bcolors.RESET}")
+                                    ips.append(str(entry))
+                                if verbose > 0 and not parsedomains:
+                                    print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from Skipping'{part}': {e}.{bcolors.RESET}")
+
+                        if verbose > 0 and not parsedomains:
                             print(
                             f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
     if not ips:
         print(f"\n{bcolors.FAIL}[-] No valid IPs given. Aborting{bcolors.RESET}")
         exit(-1)
-    return ips
+    return filter_domains(ips) if domainsonly else ips
 
 def parse_nmap_host_discovery(json_data, scantype):
     """
@@ -621,7 +631,6 @@ def parse_fuzzer(output_path, parsedtargets):
         output_path = Path(output_path)
 
     # Status codes to filter/exclude by default (uninteresting)
-    filter_statuses = {204, 301, 302, 307, 401, 403, 405}
 
     for target in parsedtargets:
         print(f"Processing target: {target}")
@@ -649,12 +658,11 @@ def parse_fuzzer(output_path, parsedtargets):
                     status = r.get("status", "N/A")
                     path = r.get("input", {}).get("FUZZ", "N/A")   # fixed extraction
                     full_url = r.get("url", "N/A")                  # optional full URL
-                    if status not in filter_statuses:
-                        interesting_results.append({
-                            "Path": path,
-                            "URL": full_url,
-                            "Status": status
-                        })
+                    interesting_results.append({
+                        "Path": path,
+                        "URL": full_url,
+                        "Status": status
+                    })
 
                 findings = {
                     "Command Line": commandline,
@@ -677,3 +685,109 @@ def parse_fuzzer(output_path, parsedtargets):
         json.dump(aggregated, f, indent=2)
 
     print(f"[+] Aggregated fuzzing data written to {output_path}")
+
+def filter_domains(items):
+    """
+    Given a list of strings (IPs or domains), return only the domains.
+    """
+    domains = []
+    for item in items:
+        try:
+            # Try to parse as IP (IPv4 or IPv6)
+            ipaddress.ip_address(item)
+        except ValueError:
+            # If ValueError, it's not an IP → treat as domain
+            domains.append(item)
+            continue
+        print(f"{bcolors.FAIL}[!] Non-domain element detected. It won't be used in the current tool:{bcolors.RESET} ", item)
+    return domains
+
+def dns_std_aggregator(targets):
+    """
+    Aggregates DNS recon results from JSON files produced by dnsrecon -t std.
+    Creates a single JSON file containing all targets, with all record types summarized per target.
+    """
+    output_dir = Path(context_manager.current_project) / "results"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    aggregated_file = output_dir / "dnsstdquery_aggregated.json"
+
+    all_targets_data = {}
+
+    for target in targets:
+        safestring = target.replace("://", "_").replace("/", "_")
+        source_file = Path(context_manager.current_project) / "scans" / "dns" / f"dnsstdquery_{safestring}.json"
+
+        if not source_file.exists():
+            print(f"[!] No DNS result file for {target}")
+            continue
+
+        try:
+            with open(source_file, "r", encoding="utf-8") as f:
+                records = json.load(f)
+        except json.JSONDecodeError:
+            print(f"[!] Could not parse JSON for {target}")
+            continue
+
+        clean_data = {
+            "A": [],
+            "AAAA": [],
+            "MX": [],
+            "NS": [],
+            "TXT": [],
+            "SOA": {},
+            "SRV": []
+        }
+
+        for record in records:
+            rtype = record.get("type")
+            name = record.get("name")
+
+            if rtype in ["A", "AAAA"]:
+                clean_data[rtype].append({
+                    "name": name,
+                    "address": record.get("address")
+                })
+            elif rtype == "MX":
+                clean_data["MX"].append({
+                    "name": name,
+                    "exchange": record.get("exchange"),
+                    "priority": record.get("priority"),
+                    "address": record.get("address")
+                })
+            elif rtype == "NS":
+                clean_data["NS"].append({
+                    "name": name,
+                    "ns": record.get("ns") or record.get("target"),
+                    "address": record.get("address"),
+                    "recursive": record.get("recursive")
+                })
+            elif rtype == "TXT":
+                clean_data["TXT"].append({
+                    "name": name,
+                    "txt": record.get("txt")
+                })
+            elif rtype == "SOA":
+                clean_data["SOA"] = {
+                    "mname": record.get("mname"),
+                    "rname": record.get("rname"),
+                    "serial": record.get("serial"),
+                    "refresh": record.get("refresh"),
+                    "retry": record.get("retry"),
+                    "expire": record.get("expire"),
+                    "minimum": record.get("minimum")
+                }
+            elif rtype == "SRV":
+                clean_data["SRV"].append({
+                    "name": name,
+                    "target": record.get("target"),
+                    "port": record.get("port"),
+                    "address": record.get("address"),
+                })
+
+        all_targets_data[target] = clean_data
+
+    with open(aggregated_file, "w", encoding="utf-8") as f:
+        json.dump(all_targets_data, f, indent=4)
+
+    print(f"[+] Aggregated DNS results saved for all targets {aggregated_file}")
+

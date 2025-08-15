@@ -1,18 +1,103 @@
+import ipaddress
+
+from core.config import bcolors
+from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
+from reconenum.dns.dnstools import standard_ip_query
+from reconenum.parser import parse_ip_inputs, filter_domains, dns_std_aggregator
+
+
+def standard_dns_query(args):
+    """
+    Perform a standard DNS query for the given domain and record type.
+    :param args: Argparse Namespace with at least: targets, nameserver (optional), auto, verbose, project.
+    """
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
+    if args.verbose > 2:
+        print(args)
+        print(f"[recon:dns std] project={args.project} verbose={args.verbose}")
+
+    # Get target domains from targets
+    parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose, True, True)
+
+    if not args.nameserver:
+        dnsquery = standard_ip_query(parsedtargetips)
+    else:
+        # First try parsing as IP addresses
+        parsednameserver = parse_ip_inputs(args.nameserver, args.auto, args.verbose, True)
+        if parsednameserver:
+            dnsquery = standard_ip_query(parsedtargetips, parsednameserver[0])
+        else:
+            print(f"{bcolors.FAIL}[!] Invalid nameserver provided: {args.nameserver}. Execution can't continue.{bcolors.RESET}")
+            exit(1)
+        dns_std_aggregator(parsedtargetips)
+def dns_domain_discovery(args):
+    """Uses dnsrecon to bruteforce subdomains using a wordlist. And also searches on subdomains on bing. Bruteforces TLD on the base domain."""
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
+    if args.verbose > 2:
+        print(args)
+        print(f"[recon:dns domain tools] project={args.project} verbose={args.verbose}")
+    parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+
+def reverse_lookup(args):
+    """Reverse DNS lookup for IPs or CIDRs"""
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+    print(args)
+
+    if args.verbose > 2:
+        print(args)
+        print(f"[recon:dns reverse ] project={args.project} verbose={args.verbose}")
+    parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+
+def zone_transfer(args):
+    """Uses dnsrecon to bruteforce subdomains using a wordlist. And also searches on subdomains on bing"""
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+    print(args)
+
+    if args.verbose > 2:
+        print(args)
+        print(f"[recon:dns zone transfer check] project={args.project} verbose={args.verbose}")
+    parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose)  # Get target arg
+
 def initdnsscanargparser(recon_sub, commonparser):
     p_dns = recon_sub.add_parser("dns", parents=[commonparser], help="DNS analysis tools")
     dns_subparsers = p_dns.add_subparsers(dest="tool", metavar="[TOOL]", required=True)
 
-    # fingerprint: run whatweb (and possibly Wappalyzer)
-    p_fingerprint = dns_subparsers.add_parser("fuzz", parents=[commonparser],
-                                              help="Run whatweb to fingerprint web technologies")
-    p_fingerprint.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
-    p_fingerprint.set_defaults(func=what_wapp_fingerprint)
-    p_fingerprint.add_argument("--auto", action="store_true",
-                               help="Use IPs from the project nmap scanned targets, if any")
-    p_fingerprint.add_argument(
-        "-o", "--overwrite",
-        action="store_true",
-        help="Overwrite targets from previous fingerprint scans on the same project. (Default appends any new IP to the list of targets)"
-    )
+    # --- Standard scan (SOA, NS, A, AAAA, MX, SRV)
+    p_regularscanner = dns_subparsers.add_parser("scan", parents=[commonparser],
+                                                 help="Standard query for SOA, NS, A, AAAA, MX and SRV records.")
+    p_regularscanner.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
+    p_regularscanner.add_argument("nameserver", nargs=1, help="Target IP(s) or CIDR(s) of the nameserver to use for the query")
+    p_regularscanner.add_argument("--auto", action="store_true",
+                                  help="Use IPs from the project nmap scanned targets, if any")
+    p_regularscanner.add_argument("-o", "--overwrite", action="store_true",
+                                  help="Overwrite targets from previous fingerprint scans on the same project. Default appends new IPs")
+    p_regularscanner.set_defaults(func=standard_dns_query)
 
-#standard scan, bruteforce and bing lookup, reverse lookup, zonetransfer, and tld (against target) and if anything use the other methods
+    # --- DNS Bruteforce
+    p_bruteforce = dns_subparsers.add_parser("subdomains", parents=[commonparser],
+                                             help="Bruteforces TLD on the base domain. For every TLD. bruteforces subdomains with wordlists, searches for subdomains on bing.")
+    p_bruteforce.add_argument("domain", help="Target domain")
+    p_bruteforce.add_argument("-w", "--wordlist", required=True, help="Wordlist file for subdomains")
+    p_bruteforce.add_argument("--nameserver", nargs=1, help="Optional nameserver to use")
+    p_bruteforce.set_defaults(func=dns_domain_discovery)
+
+
+    # --- Reverse Lookup
+    p_reverse = dns_subparsers.add_parser("reverse", parents=[commonparser],
+                                          help="Reverse DNS lookup for IPs or CIDRs")
+    p_reverse.add_argument("targets", nargs="+", help="Target IP(s) or CIDR(s)")
+    p_reverse.set_defaults(func=reverse_lookup)
+
+    # --- Zone Transfer
+    p_zonetransfer = dns_subparsers.add_parser("zonetransfer", parents=[commonparser],
+                                               help="Attempt DNS zone transfer (AXFR)")
+    p_zonetransfer.add_argument("domain", help="Target domain")
+    p_zonetransfer.add_argument("nameserver", nargs=1, help="Nameserver to attempt zone transfer against")
+    p_zonetransfer.set_defaults(func=zone_transfer)
+
