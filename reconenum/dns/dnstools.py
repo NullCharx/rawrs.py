@@ -64,4 +64,5 @@ def check_zone_transfer(targets, nameserver=None, isdnsservertarget = False):
             subprocess.run(cmd, check=True)
             print(f"[+] Finished scanning {target}")
         except subprocess.CalledProcessError as e:
-            print(f"[!] Error scanning {target}: {e}"
+            print(f"[!] Error scanning {target}: {e}")
+

@@ -1,7 +1,7 @@
 from core import context_manager
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, parse_fuzzer
-from reconenum.nmap.nmap import parsealivehosts
+from reconenum.nmap.nmaptools import parsealivehosts
 from reconenum.fuzzer import run_directory_fuzzing
 from reconenum.web.webtechanalyzer import whatwebexecutor
 from reconenum.web.webvulnanalyzer import run_wpscan_scan, run_wapiti_scan, run_nikto_scan
