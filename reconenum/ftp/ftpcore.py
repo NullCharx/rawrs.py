@@ -1,6 +1,6 @@
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from reconenum.ftp.ftptools import run_ftp_anon_check
-from reconenum.parser import parse_ftp_list
+from reconenum.parser import parse_ftp_list, parse_ip_inputs
 
 
 def initftpscanargparser(recon_sub, commonparser):
@@ -27,6 +27,6 @@ def check_ftp_anon(args):
     if args.verbose > 2:
         print(args)
         print(f"[recon:ftp anon] project={args.project} verbose={args.verbose}")
-
-    parsedtargets = parse_ftp_list(args.targets, args.auto)
+    parsedips = parse_ip_inputs(args.targets, args.auto, args.verbose)
+    parsedtargets = parse_ftp_list(parsedips, args.auto)
     run_ftp_anon_check(parsedtargets)

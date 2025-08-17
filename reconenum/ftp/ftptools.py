@@ -16,7 +16,7 @@ def run_ftp_anon_check(targets, timeout=5):
     Given a target list presupoed to have been parsed as (s)ftp://ip:port for a valid (s)ftp enabled target and port,
     check if it allows anonymous login.
     """
-    output_dir = Path(context_manager.current_project) / "scans" / "ftp"
+    output_dir = Path(context_manager.current_project) / "results"
     output_dir.mkdir(parents=True, exist_ok=True)
     anonlogintargets = {}
     for target in targets:
@@ -40,5 +40,5 @@ def run_ftp_anon_check(targets, timeout=5):
             print(f"{bcolors.OKBLUE}[!] {target}:{port} unexpected error: {e}{bcolors.RESET}")
             anonlogintargets[f"{target}:{port}"] = False
 
-    with open(output_dir / "anon_login_list.json", "w") as f:
+    with open(output_dir / "ftp_anon_login_list.json", "w") as f:
         json.dump(anonlogintargets, f, indent=2)

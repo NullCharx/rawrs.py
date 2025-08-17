@@ -785,13 +785,6 @@ def dns_std_aggregator(targets):
 
 def parse_ftp_list(targets,isauto) -> list:
     scannedlist = []
-    if isauto:
-        targetdata = context_manager.getNmapAggregatedData()
-        #Get the context keys from previous nmap if the aggregated file exists, else try to pull the targets from context
-        if targetdata:
-            targets = targetdata
-        else:
-            targets = context_manager.targets
 
     if isinstance(targets, dict):
         # Context dict case
