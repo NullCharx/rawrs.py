@@ -260,13 +260,6 @@ def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
     with open(output_path, "w") as f:
         json.dump(result, f, indent=4)
 
-    # Cleanup temp scan files
-    try:
-        os.remove(f"{context_manager.current_project}/scans/nmap/json/host_discovery_aggregated.json")
-        os.remove(f"{context_manager.current_project}/scans/nmap/json/stealth_discovery_aggregated.json")
-    except FileNotFoundError:
-        pass
-
     return result
 
 def parse_webtechresults(listoftargets, output_path = None, overwrite:bool = False):
@@ -510,7 +503,6 @@ def parse_nikto(targets, output_path=None):
             except (FileNotFoundError, json.JSONDecodeError):
                 continue  # Skip invalid/missing files
 
-            # Nikto JSON usually has a "vulnerabilities" or "items" list
             for item in data.get("vulnerabilities", data.get("items", [])):
                 findings.append({
                     "message": item.get("msg", item.get("description", "")),
@@ -791,3 +783,61 @@ def dns_std_aggregator(targets):
 
     print(f"[+] Aggregated DNS results saved for all targets {aggregated_file}")
 
+def parse_ftp_list(targets,isauto) -> list:
+    scannedlist = []
+    if isauto:
+        targetdata = context_manager.getNmapAggregatedData()
+        #Get the context keys from previous nmap if the aggregated file exists, else try to pull the targets from context
+        if targetdata:
+            targets = targetdata
+        else:
+            targets = context_manager.targets
+
+    if isinstance(targets, dict):
+        # Context dict case
+        for ip, data in targets.items():
+            ports = data.get('ports', [])
+            for port_info in ports:
+                service = port_info.get("service", {})
+                service_name = service.get("name", "").lower()
+                if "ftp" in service_name:
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"ftp://{ip}:{port_number}")
+                elif "sftp" in service_name:
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"sftp://{ip}:{port_number}")
+    elif isinstance(targets, list):
+        # Simple list of targets case
+        print(f"aa{targets}")
+
+        for target in targets:
+            scannedlist += parse_ftp_port_or_scheme(target)
+
+    else:
+        raise TypeError("targets must be either a dict or a list")
+
+    print(scannedlist)
+    return scannedlist
+
+
+def parse_ftp_port_or_scheme(target) -> list:
+    """
+    Check if a target ip (url) has a scheme or port usable for ftp analysis. If not its not
+    valid or assume that the target will correctly process an http or https petition
+    :param url:
+    :return:
+    """
+    parsecheck = urlparse(target)
+    if parsecheck.scheme:
+        if parsecheck.scheme == "ftp":
+            return [target.hostname + ":21"]
+        elif parsecheck.scheme == "sftp":
+            return [target.hostname + ":22"]
+
+    burl = "bogus://" + target
+    burlparse = urlparse(burl)
+    if burlparse.port:
+        return [target]
+    else:
+        # If no scheme and no port, default to check both normal and secure default http ports
+        return [target + ":21", target + ":22"]

@@ -4,15 +4,14 @@ def initsshscanargparser(recon_sub, commonparser):
     ssh_subparsers = p_ssh.add_subparsers(dest="tool", metavar="[TOOL]", required=True)
 
     # --- Standard scan (SOA, NS, A, AAAA, MX, SRV)
-    p_sshanonlogin = ssh_subparsers.add_parser("anon", parents=[commonparser],
-                                                 help="Checks if the target(s) allow anonymous SSH login")
-    p_sshanonlogin.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
-    p_sshanonlogin.add_argument("--auto", action="store_true",
-                                  help="Use IPs from the project nmap scanned targets, if any")
-    p_sshanonlogin.add_argument("-o", "--overwrite", action="store_true",
-                                  help="Overwrite targets from previous fingerprint scans on the same project. Default appends new IPs")
-    p_sshanonlogin.set_defaults(func=checkssh_anon)
+    p_sshanonlogin = ssh_subparsers.add_parser("tips", parents=[commonparser],
+                                                 help="Shows some tips about SSH protocol")
+    p_sshanonlogin.set_defaults(func=sshtips)
 
 
-def checkssh_anon():
-    print("TODO")
+def sshtips():
+    print("- Adding your own pubkey to the authorized_keys file of a compromised machine allows you to ssh to it without password. \n"
+          "     - The file can be crated but needs to have the correct permissions (check your own .ssh folder i in doubt\n\n ")
+    print("Search for a user private key. That way you can use it when ssh-ing (ssh -i) to impersonate them and access without"
+          "password. There are certain ketwords like \"sha\", \"ed25519\", \"key\" that could potentially be searched, nt only"
+          "in the person's documents or .ssh folder, but also on mails (?) or backups (?) aka bad practices\n\n")

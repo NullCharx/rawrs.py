@@ -141,7 +141,10 @@ def extract_service_data(aggregated_scan):
     for ip in targets:
 
         services = []
-        ports = aggregated_scan[ip].get("ports", [])
+        try:
+            ports = aggregated_scan[ip].get("ports", [])
+        except KeyError as e:
+            continue
         if ports:
             for port in ports:
                 service_name = port.get("service", {}).get("name", "")
