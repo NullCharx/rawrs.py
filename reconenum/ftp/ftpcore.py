@@ -1,5 +1,6 @@
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
-from reconenum.ftp.ftptools import run_ftp_anon
+from reconenum.ftp.ftptools import run_ftp_anon_check
+from reconenum.parser import parse_ftp_list
 
 
 def initftpscanargparser(recon_sub, commonparser):
@@ -14,10 +15,10 @@ def initftpscanargparser(recon_sub, commonparser):
                                   help="Use IPs from the project nmap scanned targets, if any")
     p_ftpanonlogin.add_argument("-o", "--overwrite", action="store_true",
                                   help="Overwrite targets from previous fingerprint scans on the same project. Default appends new IPs")
-    p_ftpanonlogin.set_defaults(func=checkftp_anon)
+    p_ftpanonlogin.set_defaults(func=check_ftp_anon)
 
 
-def checkftp_anon(args):
+def check_ftp_anon(args):
     """Check ftp anon login on an ip"""
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
@@ -25,6 +26,7 @@ def checkftp_anon(args):
 
     if args.verbose > 2:
         print(args)
-        print(f"[recon:ftp anon     ] project={args.project} verbose={args.verbose}")
+        print(f"[recon:ftp anon] project={args.project} verbose={args.verbose}")
 
-    run_ftp_anon(args)
+    parsedtargets = parse_ftp_list(args.targets, args.auto)
+    run_ftp_anon_check(parsedtargets)

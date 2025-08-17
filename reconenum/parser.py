@@ -816,7 +816,6 @@ def parse_ftp_list(targets,isauto) -> list:
     else:
         raise TypeError("targets must be either a dict or a list")
 
-    print(scannedlist)
     return scannedlist
 
 
