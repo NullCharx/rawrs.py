@@ -34,10 +34,10 @@ def run_ftp_anon_check(targets, timeout=5):
             print(f"{bcolors.OKBLUE}[-] {target}:{port} does NOT allow anonymous login{bcolors.RESET}")
             anonlogintargets[f"{target}:{port}"] = False
         except socket.timeout as e:
-            print(f"{bcolors.OKBLUE}[!] {target}:{port} connection error: {e}{bcolors.RESET}")
+            print(f"{bcolors.WARNING}[!] {target}:{port} connection error: {e}{bcolors.RESET}")
             anonlogintargets[f"{target}:{port}"] = False
         except Exception as e:
-            print(f"{bcolors.OKBLUE}[!] {target}:{port} unexpected error: {e}{bcolors.RESET}")
+            print(f"{bcolors.WARNING}[!] {target}:{port} unexpected error: {e}{bcolors.RESET}")
             anonlogintargets[f"{target}:{port}"] = False
 
     with open(output_dir / "ftp_anon_login_list.json", "w") as f:

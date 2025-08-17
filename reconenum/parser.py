@@ -353,7 +353,7 @@ def target_web_sorter(targets):
             for port_info in ports:
                 service = port_info.get("service", {})
                 service_name = service.get("name", "").lower()
-                if "http" in service_name or "https" in service_name:
+                if "http" in service_name.lower() or "https" in service_name.lower():
                     port_number = service.get("port", port_info.get("port"))
                     scannedlist.append(f"{ip}:{port_number}")
 
@@ -793,16 +793,14 @@ def parse_ftp_list(targets,isauto) -> list:
             for port_info in ports:
                 service = port_info.get("service", {})
                 service_name = service.get("name", "").lower()
-                if "ftp" in service_name:
+                if "ftp" in service_name.lower():
                     port_number = service.get("port", port_info.get("port"))
                     scannedlist.append(f"ftp://{ip}:{port_number}")
-                elif "sftp" in service_name:
+                elif "sftp" in service_name.lower():
                     port_number = service.get("port", port_info.get("port"))
                     scannedlist.append(f"sftp://{ip}:{port_number}")
     elif isinstance(targets, list):
         # Simple list of targets case
-        print(f"aa{targets}")
-
         for target in targets:
             scannedlist += parse_ftp_port_or_scheme(target)
 
@@ -829,7 +827,73 @@ def parse_ftp_port_or_scheme(target) -> list:
     burl = "bogus://" + target
     burlparse = urlparse(burl)
     if burlparse.port:
+        return ["bogus://"+target]
+    else:
+        # If no scheme and no port, default to check both normal and secure default http ports
+        return [burl + ":21", burl + ":22"]
+
+
+def parse_dns_list(targets,isauto) -> list:
+    scannedlist = []
+
+    if isinstance(targets, dict):
+        # Context dict case
+        for ip, data in targets.items():
+            ports = data.get('ports', [])
+            for port_info in ports:
+                service = port_info.get("service", {})
+                service_name = service.get("name", "").lower()
+                if "dns" in service_name.lower():
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"dns://{ip}:{port_number}")
+                elif "dnssec" in service_name.lower():
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"dnssec://{ip}:{port_number}")
+    elif isinstance(targets, list):
+        # Simple list of targets case
+        for target in targets:
+            scannedlist += parse_ftp_port_or_scheme(target)
+
+    else:
+        raise TypeError("targets must be either a dict or a list")
+
+    return scannedlist
+
+
+def parse_dns_port_or_scheme(target) -> list:
+    """
+    Check if a target ip (url) has a scheme or port usable for ftp analysis. If not its not
+    valid or assume that the target will correctly process an http or https petition
+    :param url:
+    :return:
+    """
+    parsecheck = urlparse(target)
+    if parsecheck.scheme:
+        if parsecheck.scheme == "dns" or parsecheck.scheme == "dnssec":
+            return [target.hostname + ":53"]
+
+    burl = "bogus://" + target
+    burlparse = urlparse(burl)
+    if burlparse.port:
         return [target]
     else:
         # If no scheme and no port, default to check both normal and secure default http ports
-        return [target + ":21", target + ":22"]
+        return [burl + ":53"]
+
+
+def parse_dig_command (digoutput):
+    records = []
+    print(digoutput)
+    for line in digoutput.splitlines():
+        # Use regex to match lines with DNS records
+        match = re.match(r'(\S+)\s+(\d+)\s+IN\s+(\S+)\s+(.+)', line)
+        if match:
+            record = {
+                'name': match.group(1),
+                'ttl': match.group(2),
+                'type': match.group(3),
+                'data': match.group(4)
+            }
+            records.append(record)
+
+    return records
