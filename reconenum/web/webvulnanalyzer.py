@@ -119,7 +119,7 @@ def run_nikto_scan(args, force_ssl=False):
     return validtargets
 
 def run_wpscan_scan(args, auth : str = None, cookies : str = None, pathuserdict : str = None, pathpassdict : str = None):
-    output_dir = Path(context_manager.current_project) / "scans" / "cms"
+    output_dir = Path(context_manager.current_project) / "results" / "wordpress"
     output_dir.mkdir(parents=True, exist_ok=True)
     valid_targets = []
 
