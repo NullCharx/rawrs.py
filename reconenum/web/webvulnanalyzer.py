@@ -118,13 +118,12 @@ def run_nikto_scan(args, force_ssl=False):
 
     return validtargets
 
-def run_wpscan_scan(args):
-    output_dir = Path(context_manager.current_project) / "scans" / "cms"
+def run_wpscan_scan(args, auth : str = None, cookies : str = None, pathuserdict : str = None, pathpassdict : str = None):
+    output_dir = Path(context_manager.current_project) / "results" / "wordpress"
     output_dir.mkdir(parents=True, exist_ok=True)
-
     valid_targets = []
 
-    for target in args.targets:
+    for target in args:
         if not target.startswith("http"):
             target_url = "http://" + target
         else:
@@ -151,16 +150,16 @@ def run_wpscan_scan(args):
             "--output", str(output_path),
             "--format", "json",
         ]
-        if args.auth:
+        if auth:
             wpscan_cmd.append("--http-auth")
             wpscan_cmd.append(args.httpauth)
-        if args.cookies:
+        if cookies:
             wpscan_cmd.append("cookie-string")
             wpscan_cmd.append(args.cookies)
-        if args.userdict:
+        if pathuserdict:
             wpscan_cmd.append("--usernames")
             wpscan_cmd.append(args.userdict)
-        if args.passdict:
+        if pathpassdict:
             wpscan_cmd.append("--passwords")
             wpscan_cmd.append(args.passdict)
         print(f"[+] Running WPScan on {full_url}... (This might take a while!)")

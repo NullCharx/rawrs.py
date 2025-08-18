@@ -68,9 +68,8 @@ def cmsscan(args):
         print(args)
         print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
-    wpscanoutput = run_wpscan_scan(args)
-    #TODO parse the fucking thing
-
+    wpscanoutput = run_wpscan_scan(subargs, args.auth, args.cookies, args.userdict, args.passdict)
+    #Don't parse wpscan ouput;
 def basicfuzzing(args):
     """
     Perform directory fuzzing with two common dictionaries and fzzf
