@@ -16,7 +16,7 @@ class bcolors:
     RESET = '\033[0m'
     YELLOW = '\033[33m'
     GRAY = '\033[38;5;235m'
-GLOBAL_CONFIG_PATH = Path(f"{Path(__file__).resolve().parent.parent}/config.json")
+GLOBAL_CONFIG_PATH = Path(f"{Path(__file__).resolve().parent.parent}/config.json") #TODO change
 DEFAULT_CONFIG = {
     "os": platform.system(),
     "projects_dir": "projects",

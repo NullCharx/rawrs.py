@@ -6,6 +6,7 @@ from core.config import bcolors
 
 # Required base folders and files for the project
 project_folders = ["results", "scans","tunnels"]
+
 required_files = ['notes.md', 'context.json']
 
 
