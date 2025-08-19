@@ -115,7 +115,7 @@ def setcurrentenvproject(args):
             exit(1)
     else:
         if checkdirectoryisproject(args.project):
-            current_project = Path(args.project)
+            current_project = Path(Path(args.project).resolve())
         else:
             print(f"\n{bcolors.FAIL}[-] Path {args.project} is not a recognized project. Aborting{bcolors.RESET}")
             exit(1)

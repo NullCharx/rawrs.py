@@ -11,7 +11,7 @@ def initsshscanargparser(recon_sub, commonparser):
 
 def sshtips():
     print("- Adding your own pubkey to the authorized_keys file of a compromised machine allows you to ssh to it without password. \n"
-          "     - The file can be crated but needs to have the correct permissions (check your own .ssh folder i in doubt\n\n ")
+          "     - The file can be crated but needs to have the correct permissions (check your own .ssh folder if in doubt\n\n ")
     print("Search for a user private key. That way you can use it when ssh-ing (ssh -i) to impersonate them and access without"
-          "password. There are certain ketwords like \"sha\", \"ed25519\", \"key\" that could potentially be searched, nt only"
+          "password. There are certain keywords like \"sha\", \"ed25519\", \"key\" that could potentially be searched, nt only"
           "in the person's documents or .ssh folder, but also on mails (?) or backups (?) aka bad practices\n\n")

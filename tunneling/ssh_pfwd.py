@@ -1,7 +1,12 @@
 import asyncio
 import os
 
-async def start_local_forward(user: str, host: str, remote_host: str, remote_port: int, local_host: str = "127.0.0.1", local_port: int = 0, port: int = 22, identity_file: str = None, password: str = None) -> asyncio.subprocess.Process:
+from core import context_manager
+from core.config import bcolors
+from reconenum.parser import get_user_and_home_from_path
+
+
+async def start_local_forward(user: str, host: str, local_host: str = "localhost", local_port: int = 0, remote_host: str = "0.0.0.0", remote_port: int = 0, identity_file: str = None, password: str = None, ) -> asyncio.subprocess.Process:
     """
     Start a local SSH port forward (local port -> remote port).
 
@@ -14,56 +19,79 @@ async def start_local_forward(user: str, host: str, remote_host: str, remote_por
     - local_port: Local port to bind (0 for random available port).
     - port: SSH server port (default 22).
     - identity_file: Optional SSH private key file.
-
+    - password: Optional path to a file containing the password.
     Returns:
     - asyncio.subprocess.Process running the SSH tunnel.
 
     Data Flow:
     Local Application -> Local Port -> SSH Tunnel -> Remote Host:Remote Port
     """
-    cmd = ["ssh", "-p", str(port)]
+    cmd = ["ssh"]
     if identity_file:
         cmd += ["-i", identity_file]
+    else:
+        cmd += ["-i",f"{get_user_and_home_from_path(f'{context_manager.current_project}')}/.ssh/id_ed25519"]
     if password:
-        if os.path.exists(password):
-            cmd = ["sshpass", f"-f{password}"] + cmd
+        if os.path.exists(password[0]):
+            cmd = ["sshpass", f"-f{password[0]}"] + cmd
         else:
-            cmd = ["sshpass", f"-p{password}"] + cmd
+            print("[!] Password file not found, using password directly is not recommended! Aborting.")
+            exit(1)
     cmd += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes",
-            "-nNT", "-L", f"{local_host}:{local_port}:{remote_host}:{remote_port}", f"{user}@{host}"]
-    return await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=os.environ.copy())
+            "-nNT", "-L", f"{local_host[0]}:{local_port[0]}:{remote_host[0]}:{remote_port[0]}", f"{user[0]}@{host[0]}"]
+    print(f"{bcolors.OKGREEN}Running a direct tunnel to {bcolors.BOLD}{bcolors.WARNING}{remote_host[0]} port {remote_port[0]}{bcolors.RESET}{bcolors.OKGREEN} with credentials {bcolors.BOLD}{bcolors.WARNING}{user[0]}@{host[0]}{bcolors.RESET}{bcolors.OKGREEN}. Use {bcolors.BOLD}{bcolors.WARNING}{local_host[0]}:{local_port[0]}{bcolors.RESET} {bcolors.OKGREEN} to contact whatever service is on the remote host.")
+    print(f"command:                  {bcolors.RESET}{' '.join(cmd)}{bcolors.RESET}")
+    print(f"{bcolors.UNDERLINE}{bcolors.BOLD}If nothing pops on the screen and the script doesn't exit, the tunnel is working!{bcolors.RESET}")
 
-async def start_remote_forward(user: str, host: str, local_target: str, local_port: int, remote_host: str = "127.0.0.1", remote_port: int = 0, port: int = 22, identity_file: str = None, password: str = None) -> asyncio.subprocess.Process:
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=os.environ.copy())
+    await process.wait()
+    return process
+
+
+
+
+async def start_reverse_forward(user: str, host: str, pivot_intra: str, pivot_port: int = 0, local_host: str = "0.0.0.0", local_port: int = 0, identity_file: str = None, password: str = None, ) -> asyncio.subprocess.Process:
     """
-    Start a remote SSH port forward (remote port -> local port).
+    Start a local SSH port forward (local port -> remote port).
 
     Arguments:
     - user: SSH username for the remote host.
     - host: SSH server to connect to.
-    - local_target: Local machine or service to expose.
-    - local_port: Local port to forward.
-    - remote_host: Remote interface to bind (default 127.0.0.1).
-    - remote_port: Remote port to bind (0 for random available port).
+    - remote_host: Remote host to forward to (from the perspective of SSH server).
+    - remote_port: Remote port to forward.
+    - local_host: Local interface to bind the forwarded port (default 127.0.0.1).
+    - local_port: Local port to bind (0 for random available port).
     - port: SSH server port (default 22).
     - identity_file: Optional SSH private key file.
-
+    - password: Optional path to a file containing the password.
     Returns:
     - asyncio.subprocess.Process running the SSH tunnel.
 
     Data Flow:
-    Remote Client -> Remote Port -> SSH Tunnel -> Local Target:Local Port
+    Local Application -> Local Port -> SSH Tunnel -> Remote Host:Remote Port
     """
-    cmd = ["ssh", "-p", str(port)]
+    cmd = ["ssh"]
     if identity_file:
         cmd += ["-i", identity_file]
+    else:
+        cmd += ["-i",f"{get_user_and_home_from_path(f'{context_manager.current_project}')}/.ssh/id_ed25519"]
     if password:
-        if os.path.exists(password):
-            cmd = ["sshpass", f"-f{password}"] + cmd
+        if os.path.exists(password[0]):
+            cmd = ["sshpass", f"-f{password[0]}"] + cmd
         else:
-            cmd = ["sshpass", f"-p{password}"] + cmd
-    cmd += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes",
-            "-nNT", "-R", f"{remote_host}:{remote_port}:{local_target}:{local_port}", f"{user}@{host}"]
-    return await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=os.environ.copy())
+            print("[!] Password file not found, using password directly is not recommended! Aborting.")
+            exit(1)
+    cmd += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes", "-o", "GatewayPorts=yes",
+            "-nNT", "-R", f"{pivot_intra[0]}:{pivot_port[0]}:{local_host[0]}:{local_port[0]}", f"{user[0]}@{host[0]}"]
+    print(f"{bcolors.OKGREEN}Running a reverse tunnel that will forward any data reaching pivot {bcolors.BOLD}{bcolors.WARNING}{pivot_intra[0]} port {pivot_port[0]}{bcolors.RESET}{bcolors.OKGREEN} with credentials {bcolors.BOLD}{bcolors.WARNING}{user[0]}@{host[0]}{bcolors.RESET}{bcolors.OKGREEN} to attacker {bcolors.BOLD}{bcolors.WARNING}{local_host[0]} port{local_port[0]}{bcolors.RESET} {bcolors.OKGREEN} that will \"output\" whatever data is sent from the target host through the pivot to the local port, i.e a reverse shell.")
+    print(f"command:                  {bcolors.RESET}{' '.join(cmd)}{bcolors.RESET}")
+    print(f"{bcolors.WARNING}{bcolors.BOLD}If the parameters are correct but the forwarding still fails, you need to specify GatewayPorts=yes on sshd_config{bcolors.RESET}")
+    print(f"{bcolors.UNDERLINE}{bcolors.BOLD}If nothing pops on the screen and the script doesn't exit, the tunnel is working!{bcolors.RESET}")
+
+    process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=os.environ.copy())
+    await process.wait()
+    return process
+
 
 async def start_dynamic_socks(user: str, host: str, socks_host: str = "127.0.0.1", socks_port: int = 0, port: int = 22, identity_file: str = None, password: str = None) -> asyncio.subprocess.Process:
     """

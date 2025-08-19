@@ -9,6 +9,7 @@ from core.config import bcolors, load_global_config, save_global_config
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from core.project_manager.projects import create_project, checkdirectoryisproject
 from reconenum.reconmain import initreconenumsubparsers
+from tunneling.tunnelcore import inittunnelscanargparser
 
 splash = ["""
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⡇⠀⠀⠀⠀⠚⠉⠈⠓⣦⡀⠀⠀⠀⠀⠀⠀⡿⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀
@@ -78,16 +79,6 @@ splash = ["""
 
 
 
-def cmd_tunnel(args):
-    """
-    Handler For the tunnel commands
-    :param args: arguments to be passed to the argument subtool
-    :return:
-    """
-    setcurrentenvproject(args)
-    loadProjectContextOnMemory()
-    if args.verbose < 2:
-        print("[tunnel] (placeholder)")
 
 def cmd_transfer(args):
     """
@@ -153,9 +144,8 @@ def build_parser() -> argparse.ArgumentParser:
     initreconenumsubparsers(menusubparser, common)
 
     # ===================== TUNNEL =====================
-    p_tunnel = menusubparser.add_parser("tunnel", parents=[common], help="Tunneling, pivoting, proxies")
-    # you can add tunnel subcommands here with p_tunnel.add_subparsers(...)
-    p_tunnel.set_defaults(func=cmd_tunnel)
+
+    inittunnelscanargparser(menusubparser, common)
 
     # ===================== TRANSFER =====================
     p_transfer = menusubparser.add_parser("transfer", parents=[common], help="Transfer tools/files")

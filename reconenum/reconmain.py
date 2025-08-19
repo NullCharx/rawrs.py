@@ -8,6 +8,8 @@ from reconenum.nmap.nmaptools import full_discovery
 from reconenum.parser import parse_ip_inputs
 from reconenum.ssh.sshcore import initsshscanargparser
 from reconenum.web.webscanner import initwebscanargparser
+from tunneling.tunnelcore import inittunnelscanargparser
+
 
 #basicamente: Termina wp vulnerable parser
 #Ternina el parser de dnsrecon zone tranfer
@@ -48,11 +50,12 @@ def initreconenumsubparsers(menusubparser, commonparser):
     initftpscanargparser(recon_sub, commonparser)
 
 
+
     p_smb = recon_sub.add_parser("smb", parents=[commonparser], help="SMB-specific enumeration")
     p_smb.set_defaults(func=cmd_recon_smb)
 
-    p_smb = recon_sub.add_parser("win", parents=[commonparser], help="Windows AD enumeration")
-    p_smb.set_defaults(func=cmd_recon_smb)
+    p_win = recon_sub.add_parser("win", parents=[commonparser], help="Windows AD enumeration")
+    p_win.set_defaults(func=cmd_recon_smb)
 
 
 

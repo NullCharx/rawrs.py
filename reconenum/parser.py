@@ -897,3 +897,28 @@ def parse_dig_command (digoutput):
             records.append(record)
 
     return records
+
+
+import os
+
+
+def get_user_and_home_from_path(path: str):
+    # Normalize the path to handle different formats
+    normalized_path = os.path.normpath(path)
+
+    # Split the path into components
+    path_parts = normalized_path.split(os.sep)
+
+    # Check for Unix-like systems
+    if len(path_parts) > 1 and path_parts[0] == '':
+        # This is an absolute path, check the first part after the root
+        user_home = os.path.join(os.sep, path_parts[1], path_parts[2])  # /home/username
+        return user_home
+
+    # Check for Windows systems
+    elif len(path_parts) > 1 and len(path_parts[0]) == 2 and path_parts[1] == 'Users':
+        # This is a Windows path, e.g., C:\Users\username
+        user_home = os.path.join(path_parts[0], path_parts[1])  # C:\Users
+        return user_home
+
+    return None  # Return None if the path does not match expected formats
