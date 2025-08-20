@@ -383,7 +383,22 @@ def init_environment(verbosity,config):
     else:
         if verbosity > 2:
             print(f"{bcolors.OKGREEN}[+] dnsrecon installed{bcolors.RESET}")
-    #Check wpscan command somewhere. THen droppescan.
+
+    if not shutil.which("proxychains"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] proxychains is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["apt", "install", "proxychains"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] proxychains couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] proxychains installed{bcolors.RESET}")
+
     #Create default project
     if not checkdirectoryisproject("cwd"):
         create_project(config["default_project"], verbosity, config)

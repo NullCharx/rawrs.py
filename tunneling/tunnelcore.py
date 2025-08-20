@@ -2,7 +2,7 @@ import asyncio
 
 
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory, current_project
-from tunneling.ssh_pfwd import start_local_forward, start_reverse_forward
+from tunneling.ssh_pfwd import start_local_forward, start_reverse_forward, start_dynamic_socks
 
 
 def inittunnelscanargparser(general_parser, commonparser):
@@ -43,6 +43,23 @@ def inittunnelscanargparser(general_parser, commonparser):
                                   help="A file with the password to use for the SSH connection with the pivot machine. Directly using the password aborts the script.")
     p_reverseforward.set_defaults(func=reverse_forward)
 
+    # --- Dynamic proxy forward
+    p_dynamicforward = tunnel_subparsers.add_parser("dynamic", parents=[commonparser],
+                                                   help="Reverse forward on the pivot that allows data fro, the target machine to be sent to the attacker machine through the pivot SSH server")
+    p_dynamicforward.add_argument("user", nargs=1, help="User on the pivot machine")
+    p_dynamicforward.add_argument("host", nargs=1,
+                                 help="IP of the pivot machine visible to the attacker to which the SSH connection will be made")
+    p_dynamicforward.add_argument("localtarget", nargs=1, help="Local IP of the attacker machine to which the dynamic forward will be bound. Should be either 127.0.0.1 (socks locally available) or 0.0.0.0 (any connection to the port will be proxfied to the pivot. Useful for chaining or sharing)")
+    p_dynamicforward.add_argument("localport", nargs=1, help="Local port on the attacker machine to bind")
+    p_dynamicforward.set_defaults(func=local_forward)
+    p_dynamicforward.add_argument("--identity", nargs=1,
+                                  help="Path to an identity file to use for the SSH connection with the pivot machine")
+    p_dynamicforward.add_argument("--credentials", nargs=1,
+                                  help="A file with the password to use for the SSH connection with the pivot machine. Directly using the password aborts the script.")
+    p_dynamicforward.add_argument("--autoconfig", action="store_true",
+                                  help="Whether the script should try to adjust the proxychains configuration automatically. If not set, the user should manually adjust the proxychains configuration to use the dynamic forward port.")
+    p_dynamicforward.set_defaults(func=dynamic_forward)
+
 def local_forward(args):
     """
     Start a local SSH port forward (local port -> remote port).
@@ -68,7 +85,23 @@ def reverse_forward(args):
 
     if args.verbose > 2:
       print(args)
-      print(f"[recon:ssh diret] project={args.project} verbose={args.verbose}")
+      print(f"[recon:ssh reverse] project={args.project} verbose={args.verbose}")
 
     # Get target domains from targets
     asyncio.run(start_reverse_forward(args.user, args.host, args.pivotip, args.pivotport, args.localtarget, args.localport,args.identity,args.credentials))
+
+
+def dynamic_forward(args):
+    """
+    Start a local SSH port forward (local port -> remote port).
+
+    """
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+
+    if args.verbose > 2:
+      print(args)
+      print(f"[recon:ssh dynamic] project={args.project} verbose={args.verbose}")
+
+    # Get target domains from targets
+    asyncio.run(start_dynamic_socks(args.user, args.host, args.localtarget, args.localport, args.identity,args.credentials, args.autoconfig))
