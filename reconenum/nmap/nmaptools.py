@@ -9,7 +9,7 @@ import subprocess
 import json
 import os
 
-def run_nmap_scan(nmap_args: list, verbose: int, output_prefix="scan"):
+def run_nmap_scan(targets: list, nmapcmdlet : list, verbose: int, output_prefix="scan"):
     # Generate timestamp for unique file naming
     scandate = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -25,8 +25,9 @@ def run_nmap_scan(nmap_args: list, verbose: int, output_prefix="scan"):
 
     nmaptargetlist = []
 
+    # Ensure the output directory exists
     # --- Handle all possible input types (str list, dict)---
-    for element in nmap_args:
+    for element in targets:
         if isinstance(element, dict):
             # Parsed nmap JSON - keys are IPs
             nmaptargetlist.extend(element.keys())
@@ -52,12 +53,10 @@ def run_nmap_scan(nmap_args: list, verbose: int, output_prefix="scan"):
 
     # --- Run nmap ---
     try:
+        nmapfullcmd = ['nmap'] + nmapcmdlet + nmaptargetlist + ['-oX', xml_path]
         # Remove the first element if it's an option like "-sn"
-        if nmaptargetlist and nmaptargetlist[0].startswith('-'):
-            nmaptargetlist = nmaptargetlist[1:]
 
-        if verbose > 0:
-            print(f"[+] Running Nmap: {' '.join(['nmap'] + nmaptargetlist + ['-oX', xml_path])}{bcolors.GRAY}")
+        print(f"{bcolors.WARNING}[i] Running Nmap: {' '.join(nmapfullcmd)}{bcolors.RESET}")
 
         subprocess.run(
             ["nmap"] + nmaptargetlist + ["-oX", xml_path],
@@ -101,7 +100,10 @@ def run_nmap_scan(nmap_args: list, verbose: int, output_prefix="scan"):
 
 
 def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
-
+    print(f"\n{bcolors.YELLOW}[i] nmap scans are one of the backbones of a successful audit.")
+    print(f"[i] In a professional environment, you should be careful when scanning a target, as it may trigger alarms, intrusion systems or be against the rules of engagement.")
+    print(f"[i] If you are not sure, ask the client or your manager before running a scan.")
+    print(f"[i] In a OSCP scenario, scanning in an exhaustive manner and being noisy is preferred.{bcolors.OKCYAN}\n")
 
     print(f"{bcolors.OKCYAN}[+] Starting full discovery on {ip_range}...")
 
@@ -110,10 +112,13 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
 
     # STEP 4 – Port scan with service detection (-sVC)
     targets = list(all_up_hosts.keys())
+    print(f"\n\n\n{bcolors.YELLOW}[i] Once with a reduced list of (potentially) alive targets, service detection can be performed.")
+    print(f"[i] Since we've already checked they are alive, -Pn option tells nmap to act as if all the targets are alive and to not perform a ping before scanning")
+    print(f"[i] Service detection usually works by banner grabbing, port reply analysis and using some specialized scripts.")
+    print(f"[i] This scan also uses some common nmap scripts on each port to look for extra info, misconfiguration and common enumeration.")
     print(f"{bcolors.OKCYAN}[+] Performing service detection on discovered hosts: {targets}\n...")
     args = ["-sVC","-Pn"]
-    args.append(targets)
-    full_scan = run_nmap_scan(args, verbose,"full_scan")
+    full_scan = run_nmap_scan(targets, args, verbose,"full_scan")
     aggregated_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
 
     #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
@@ -168,11 +173,14 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
     :param:is_overwrite: if the targets are added to or overwrite any existing project targets
     :param:verbose: verbosity
     """
+
     # STEP 1 – Basic Host Discovery (ping scan)
+    print(f"\n\n\n{bcolors.YELLOW}[i] Directly scanning for services on a whole subnet, CIDR or IP range can be noisy and trigger alarms, as well as time consuming,"
+          f"so it is recommended to use an ICMP ping scan first to discard non-alive hosts.{bcolors.OKCYAN}")
+
     print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
     args = ["-sn"]
-    args.append(ip_range)
-    host_discovery_results = run_nmap_scan(args, verbose, "host_discovery")
+    host_discovery_results = run_nmap_scan(ip_range, args, verbose, "host_discovery")
     if host_discovery_results.get("Host", []):
         host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")
         if verbose > 0:
@@ -180,8 +188,11 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
             print(f"{bcolors.RESET}---------------------------------{bcolors.OKCYAN}")
     # STEP 2 – Additional discovery for stealthy or filtered hosts
     args[0] = f"-sS"
+    print(
+        f"\n\n\n{bcolors.YELLOW}[i] Most hosts reply to a ping scan. However, due to firewalls or other causes, some might not. Thus, a stealth pin, as well as being"
+        f" less noisy than the standard, might detect extra IPs (remember that filtered =/= open!)")
     print(f"{bcolors.OKCYAN}[+] Discovering quiet hosts (stealth)...")
-    stealth_discovery_result = run_nmap_scan(args, verbose, "stealth_discovery")
+    stealth_discovery_result = run_nmap_scan(ip_range, args, verbose, "stealth_discovery")
     if stealth_discovery_result.get("Host", []):
         stealth_discovery_result = parse_nmap_host_discovery(stealth_discovery_result, "stealth_discovery")
         if verbose > 0:
@@ -198,7 +209,7 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
         if k not in all_up_hosts:
             all_up_hosts[k] = v
     setTargets(all_up_hosts, is_overwrite)
-    print(f"[+] Total unique hosts discovered: {len(all_up_hosts)}")
+    print(f"{bcolors.OKGREEN}[+] Total unique hosts discovered: {len(all_up_hosts)}{bcolors.RESET}")
     if (len(all_up_hosts) == 0):
         print(f"{bcolors.FAIL}[-] No hosts appear to be up in the specified range. Are you sure you provided correct IPs. . .? Exiting\n")
         print(f"---------------------------------{bcolors.RESET}\n")

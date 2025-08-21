@@ -29,10 +29,9 @@ def initreconenumsubparsers(menusubparser, commonparser):
         "recon",
         help="Port/service scans & protocol-specific enumeration",
         description=(
-            "Scan subtool for ports, services, and protocols.\n\n"
+            "Scan subtool for ports, services, and protocols, inlcuding tools like dns checks, anon login checks and more\n\n"
             "Examples:\n"
-            "  rawrs.py recon nmapscan -o 192.168.1.0/24\n"
-            "  rawrs.py recon nmapscan 192.168.1.1,192.168.1.2\n"
+            "  rawrs.py recon nmap scan -o 192.168.1.0/24\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -44,7 +43,7 @@ def initreconenumsubparsers(menusubparser, commonparser):
     initwebscanargparser(recon_sub, commonparser)
 
     initdnsscanargparser(recon_sub, commonparser)
-
+    #printhelps then do smb
     initsshscanargparser(recon_sub, commonparser)
 
     initftpscanargparser(recon_sub, commonparser)

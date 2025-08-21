@@ -19,6 +19,12 @@ def standard_dns_query(args):
         print(f"[recon:dns std] project={args.project} verbose={args.verbose}")
 
     # Get target domains from targets
+    print(f"\n{bcolors.YELLOW}[i]DNS servers can give extra information about the target, such as subdomains, IPs, and more. "
+          f"This scan checks for some standard ports and records: SOA, NS, A, AAAA, MX and SRV.{bcolors.RESET}")
+    print(f"{bcolors.YELLOW}[i] Enterprises usually run on-premise authoritative DNS servers for internal names,"
+          f"and less often for external names, otherwise they are managed by cloud providers (like Cloudfare, AWS...) {bcolors.RESET}")
+    print(f"{bcolors.YELLOW}[i] The targets from which to get info must be domains, not IPs. A reverse lookup (IP->DNS) is another query{bcolors.RESET}\n")
+
     parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose, True, True)
 
     if not args.nameserver:
@@ -39,6 +45,8 @@ def zone_transfer(args):
     loadProjectContextOnMemory()
     print(args)
 
+    print(f"\n{bcolors.YELLOW}[i]Zone transfers are DNS operations to copy the contents between two authoritative DNS servers.")
+    print(f"\n[i] A misconfigured DNS server may allow unauthorized or unauthenticated zone transfers, exposing sensitive information about the domain, such as subdomains, IP addresses, and other DNS records.{bcolors.RESET}")
     if args.verbose > 2:
         print(args)
         print(f"[recon:dns zone transfer check] project={args.project} verbose={args.verbose}")
@@ -61,6 +69,9 @@ def dns_domain_discovery(args):
     """Uses dnsrecon to bruteforce subdomains using a wordlist. And also searches on subdomains on bing. Bruteforces TLD on the base domain."""
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
+    print(f"\n{bcolors.YELLOW}[i] Various bruteforcing operations might be performed on the base domain, such as bruteforcing TLDs or subdomains with a wordlist. {bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] This can cause inestability or service disruptions or be noisy in in-real-life scenarios {bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] Another way is via OSINT, like searching or bruteforcing subdomains via the internet (a search engine).{bcolors.RESET}")
 
     if args.verbose > 2:
         print(args)
@@ -70,6 +81,8 @@ def dns_domain_discovery(args):
 
 def reverse_lookup(args):
     """Reverse DNS lookup for IPs or CIDRs"""
+    print(f"\n{bcolors.YELLOW}[i] Reverse lookups can be useful in certain situations well all the info available is the domain name. {bcolors.RESET}")
+
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
     print(args)
@@ -87,8 +100,8 @@ def initdnsscanargparser(recon_sub, commonparser):
     # --- Standard scan (SOA, NS, A, AAAA, MX, SRV)
     p_regularscanner = dns_subparsers.add_parser("scan", parents=[commonparser],
                                                  help="Standard query for SOA, NS, A, AAAA, MX and SRV records.")
-    p_regularscanner.add_argument("targets", nargs="*", help="Target IP(s), CIDR(s) or domain(s), or use --auto")
-    p_regularscanner.add_argument("nameserver", nargs=1, help="Target IP(s) or CIDR(s) of the nameserver to use for the query")
+    p_regularscanner.add_argument("targets", nargs="*", help="Target domains to resolve.")
+    p_regularscanner.add_argument("nameserver", nargs=1, help="Target IP of the nameserver to use for the query")
     p_regularscanner.add_argument("--auto", action="store_true",
                                   help="Use IPs from the project nmap scanned targets, if any")
     p_regularscanner.add_argument("-o", "--overwrite", action="store_true",
@@ -106,7 +119,7 @@ def initdnsscanargparser(recon_sub, commonparser):
                                   help="Use IPs from the project nmap scanned targets, if any")
     p_bruteforce.add_argument("-o", "--overwrite", action="store_true",
                                   help="Overwrite targets from previous fingerprint scans on the same project. Default appends new IPs")
-    p_bruteforce.set_defaults(func=standard_dns_query)
+    p_bruteforce.set_defaults(func=dns_domain_discovery)
 
     # --- Reverse Lookup
     p_reverse = dns_subparsers.add_parser("reverse", parents=[commonparser],
@@ -128,3 +141,4 @@ def initdnsscanargparser(recon_sub, commonparser):
     p_zonetransfer.add_argument("-o", "--overwrite", action="store_true",
                                   help="Overwrite targets from previous fingerprint scans on the same project. Default appends new IPs")
     p_zonetransfer.set_defaults(func=zone_transfer)
+
