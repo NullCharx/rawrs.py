@@ -5,8 +5,6 @@ from prompt_toolkit.layout import HSplit, Window, VSplit, Dimension, Layout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Button, Label
 
-from rawrsold import laod_last_project_button, load_a_project_button, make_new_project_button, manage_projects_button, \
-    global_settings_button, exit_application, config
 
 
 def handle_and_exit(label, handler_func):

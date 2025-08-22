@@ -1,12 +1,4 @@
-from core.parsers.target import parse_ip_inputs, parsealivehosts, parse_smb_targets
-from core.parsers.smb import parse_smbshares, parse_smbusers, aggregate_smbvulns
-from core.executors.smb import (
-    smbmapexecutor,
-    smbclientexecutor,
-    enum4linuxexecutor,
-    crackmapexec_smbexecutor,
-)
-from core.context import context_manager
+
 
 
 def smb_shares(args):

@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 
 from core import context_manager
+from core.config import bcolors
+
 
 def run_wapiti_scan(args, disable_ssl=False):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
@@ -42,10 +44,10 @@ def run_wapiti_scan(args, disable_ssl=False):
         if disable_ssl:
             cmd.append("--no-ssl-check")
 
-        print(f"[+] Running Wapiti on {target_url}...")
+        print(f"{bcolors.WARNING}[i] Running wapiti: {' '.join(cmd)}{bcolors.OKCYAN}")
 
         try:
-            result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+            result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verose >1 else True, check=True)
 
             # If Wapiti produces any stderr output, consider scan failed and remove output file
             if result.stderr:
@@ -105,10 +107,10 @@ def run_nikto_scan(args, force_ssl=False):
         if force_ssl or scheme == "https":
             cmd.append("-ssl")
 
-        print(f"[+] Running Nikto on {target_url}...")
+        print(f"{bcolors.WARNING}[i] Running nikto: {' '.join(cmd)}{bcolors.OKCYAN}")
 
 
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=False)
+        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verbose >1 else True, check=False)
         if result.returncode == 1:
             validtargets.append(target)
         if result.stderr:
@@ -118,7 +120,7 @@ def run_nikto_scan(args, force_ssl=False):
 
     return validtargets
 
-def run_wpscan_scan(args, auth : str = None, cookies : str = None, pathuserdict : str = None, pathpassdict : str = None):
+def run_wpscan_scan(args, verbose, auth : str = None, cookies : str = None, pathuserdict : str = None, pathpassdict : str = None):
     output_dir = Path(context_manager.current_project) / "results" / "wordpress"
     output_dir.mkdir(parents=True, exist_ok=True)
     valid_targets = []
@@ -162,10 +164,10 @@ def run_wpscan_scan(args, auth : str = None, cookies : str = None, pathuserdict 
         if pathpassdict:
             wpscan_cmd.append("--passwords")
             wpscan_cmd.append(args.passdict)
-        print(f"[+] Running WPScan on {full_url}... (This might take a while!)")
+        print(f"{bcolors.WARNING}[i] Running ffuff: {' '.join(wpscan_cmd)} (This might take a while!){bcolors.OKCYAN}")
 
         try:
-            subprocess.run(wpscan_cmd,capture_output=True, check=True)
+            subprocess.run(wpscan_cmd,capture_output=False if verbose > 1 else True, check=True)
             valid_targets.append(full_url)
         except subprocess.CalledProcessError as e:
             print(f"[!] WPScan failed on {full_url}: {e}")

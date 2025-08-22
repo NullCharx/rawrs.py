@@ -2,6 +2,8 @@ from core import context_manager
 import subprocess
 from pathlib import Path
 
+from core.config import bcolors
+
 
 def fuzzyfind_dictionaries():
     """
@@ -86,9 +88,10 @@ def run_directory_fuzzing(targets, args):
             cmd.append(args.header)
 
         print(f"[+] Running fuzzing on {target_url}...")
+        print(f"{bcolors.WARNING}[i] Running ffuff: {' '.join(cmd)}{bcolors.OKCYAN}")
 
         try:
-            subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False, check=True)
+            subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verbose > 1 else True, check=True)
             valid_targets.append(target_url)
         except subprocess.CalledProcessError as e:
             print(f"[!] Fuzzing failed on {target_url}: {e}")

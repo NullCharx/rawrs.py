@@ -40,7 +40,6 @@ def initreconenumsubparsers(menusubparser, commonparser):
     initnmapscanargparser(recon_sub, commonparser)
 
     # protocol submenus
-    #finish web comments and others checl that the commands are printed for every subsection
     initwebscanargparser(recon_sub, commonparser)
 
     initdnsscanargparser(recon_sub, commonparser)

@@ -1,6 +1,7 @@
 import os
 import subprocess
 from core import context_manager
+from core.config import bcolors
 
 
 #use system program instead pf pythonas its very linted
@@ -32,10 +33,13 @@ def whatwebexecutor(targets):
         except Exception as e:
             print(f"Exception opening {safestring}.json: {e}")
             pass
+        wwcmd = ["whatweb", "-v", "-a 3", f"{target}",
+             f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{safestring}.json"]
+
+        print(f"{bcolors.WARNING}[i] Running whatweb: {' '.join(wwcmd)}{bcolors.RESET}")
 
         status = subprocess.run(
-            ["whatweb", "-v", "-a 3", f"{target}",
-             f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{safestring}.json"],
+            wwcmd,
             stderr=subprocess.PIPE, capture_output=False, check=True)
         if status.stderr:
             print(status.stderr.decode())

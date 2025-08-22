@@ -54,6 +54,10 @@ def webvuln(args):
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedtargets}")
     #Make wapiti and nikto return the correct dicts to parse
+
+    print(f"{bcolors.WARNING}[i] Remember that while automated vulnerability tools might be a good start, there are various options"
+          f"not used in this script, as well as some flaws that might not appear on the scans the first time!{bcolors.OKCYAN}")
+    print(f"{bcolors.WARNING}[i] Always research vulnerabilities and exploits for target systems and versions for yourslef too!{bcolors.OKCYAN}")
     run_wapiti_scan(parsedtargets)
     run_nikto_scan(parsedtargets)
 
@@ -73,7 +77,7 @@ def cmsscan(args):
         print(args)
         print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
-    wpscanoutput = run_wpscan_scan(subargs, args.auth, args.cookies, args.userdict, args.passdict)
+    wpscanoutput = run_wpscan_scan(subargs, args.verbose, args.auth, args.cookies, args.userdict, args.passdict)
     #Don't parse wpscan ouput;
 def basicfuzzing(args):
     """
@@ -90,6 +94,24 @@ def basicfuzzing(args):
     parsedtargets = parse_web_targets(alivetargets,subargs)
     run_directory_fuzzing(parsedtargets, args) #Perform fuzzing
     parse_fuzzer(None,parsedtargets) #Generate summary
+
+def texttipsweb(args):
+    print(f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages is always a good idea")
+    print(f"\n{bcolors.YELLOW}[i] If nmap returns {bcolors.WARNING}POST as a permitted http method{bcolors.YELLOW}, or if it is permitted in a subpage of the domain, its as easy as uploading any arbitrary file, like a reverse shell.")
+    print(f"\n{bcolors.YELLOW}[i] Check {bcolors.WARNING}input elements{bcolors.YELLOW} of the web, like login, search or file upload forms or URL parameters."
+          f"\n\n      - This include checking for {bcolors.WARNING}SQL injections{bcolors.YELLOW}, specially in places that might make unsanitized queries to databases (login forms, search forms)"
+          f"\n      Also {bcolors.WARNING}XSS{bcolors.YELLOW} that might end up running arbitrary scripts on the server side."
+          f"\n\n      - Poorly configured {bcolors.WARNING}upload forms{bcolors.YELLOW} that might let arbitrary files be uploaded under certain circumstances."
+          f"\n\n      - Certain {bcolors.WARNING}url parameters{bcolors.YELLOW} (after the url, like: ?paremeter1=value1&paremeter2=value2&paremeter3=value3...) might be vulnerable to injection too if input is not properly sanitzed before being given to whatever is behind"
+          f"\n              Take into account that some characters in URLS are formatted differently (and usually handled automatically by the browser) like '.' and '/'"
+          f"\n              You can try using {bcolors.WARNING}php wrappers{bcolors.YELLOW} to gain access to or upload certain files."
+          f"\n\n      - Use password making tools like cewl or dictionaries like {bcolors.WARNING}rockyou.txt{bcolors.YELLOW} for passwords. In OSCP a password is very likely to be found in that dictionary if it has to be bruteforced."
+          f"\n\n      - Use tools like {bcolors.WARNING}hydra{bcolors.YELLOW} to perform the bruteforce.")
+    print(f"\n{bcolors.YELLOW}[i] Wpscan is the tool to scan wordpress installations. The script runs a very comprehensive scan, but some other tools re worth checking manually."
+          f"Once inside, check for vulnerabilities of scripts installed. If you manage to escalate to admin, check the php editor and change a script that loads (or can be for loaded/reloaded) into the page to run arbitrary code")
+    print(f"\n{bcolors.YELLOW}[i] For others like Drupal or moodle, you can use other tools like Droopescan..")
+    print(f"\n{bcolors.YELLOW}[i] Remember that while the {bcolors.WARNING}root of a webpage (usually the first scanned path) might not have a certain vulnerability or misconfiguration,"
+          f"some other subpage might! {bcolors.YELLOW} i.e the root might not have POST as accepted method, but some subpage might!{bcolors.RESET}")
 
 def initwebscanargparser(recon_sub, commonparser):
     # Main "web" command parser
@@ -172,7 +194,9 @@ def initwebscanargparser(recon_sub, commonparser):
         help="Overwrite targets from previous fingerprint scans on the same project. (Default appends any new IP to the list of targets)"
     )
 
-
+    p_tip = web_subparsers.add_parser("tips", parents=[commonparser],
+                                       help="Some other tips and actions that can be taken manually")
+    p_tip.set_defaults(func=texttipsweb)
 
 
     #If technologies returns wordpress -> wpscan
