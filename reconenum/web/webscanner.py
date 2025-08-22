@@ -31,6 +31,7 @@ def what_wapp_fingerprint(args):
     parsedwebtargets = parse_web_targets(alivetargets,subargs)
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedwebtargets}")
+
     whatwebresults = whatwebexecutor(parsedwebtargets) #Scan. Only return web targets that were actually scanned
     #Whatweb
     finalwebtechresults = parse_webtechresults(whatwebresults, f"{context_manager.current_project}/results/whatweb_aggregated.json", args.overwrite)
@@ -57,7 +58,7 @@ def webvuln(args):
 
     print(f"{bcolors.WARNING}[i] Remember that while automated vulnerability tools might be a good start, there are various options"
           f"not used in this script, as well as some flaws that might not appear on the scans the first time!{bcolors.OKCYAN}")
-    print(f"{bcolors.WARNING}[i] Always research vulnerabilities and exploits for target systems and versions for yourslef too!{bcolors.OKCYAN}")
+    print(f"\n{bcolors.WARNING}[i] Always research vulnerabilities and exploits for target systems and versions for yourself too!{bcolors.OKCYAN}")
     run_wapiti_scan(parsedtargets)
     run_nikto_scan(parsedtargets)
 
@@ -72,6 +73,13 @@ def cmsscan(args):
     #Add username and password dict options and then check for authenticated attacks (wpscan)
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
+    print(
+        f"\n{bcolors.YELLOW}[i] Wpscan is the tool to scan wordpress installations. The script runs a very comprehensive scan, but some other tools are worth checking manually.")
+    print(f"{bcolors.WARNING}[i] Certain vulnerabilities pertain not the server itself, but to the CMS (Content Management System) used!")
+    print(f"\n{bcolors.WARNING}[i] Scripts and misconfigurations available for the CMS can potentially be used to infiltrate a target system")
+    print(f"\n{bcolors.WARNING}[i] Most times you will find yourself getting access to a regular user (a blogger, a customer), and then find a way"
+          f"to escalate to either the CMS admin or to the server itself via CMS scripts or other web or core CMS misconfigurations/vulnerabilities!")
+    print(f"{bcolors.YELLOW}[If you manage to escalate to admin, check the php editor and change a script that loads (or can be for loaded/reloaded) into the page to run arbitrary code{bcolors.OKCYAN}[")
 
     if args.verbose > 2:
         print(args)
@@ -107,8 +115,7 @@ def texttipsweb(args):
           f"\n              You can try using {bcolors.WARNING}php wrappers{bcolors.YELLOW} to gain access to or upload certain files."
           f"\n\n      - Use password making tools like cewl or dictionaries like {bcolors.WARNING}rockyou.txt{bcolors.YELLOW} for passwords. In OSCP a password is very likely to be found in that dictionary if it has to be bruteforced."
           f"\n\n      - Use tools like {bcolors.WARNING}hydra{bcolors.YELLOW} to perform the bruteforce.")
-    print(f"\n{bcolors.YELLOW}[i] Wpscan is the tool to scan wordpress installations. The script runs a very comprehensive scan, but some other tools re worth checking manually."
-          f"Once inside, check for vulnerabilities of scripts installed. If you manage to escalate to admin, check the php editor and change a script that loads (or can be for loaded/reloaded) into the page to run arbitrary code")
+
     print(f"\n{bcolors.YELLOW}[i] For others like Drupal or moodle, you can use other tools like Droopescan..")
     print(f"\n{bcolors.YELLOW}[i] Remember that while the {bcolors.WARNING}root of a webpage (usually the first scanned path) might not have a certain vulnerability or misconfiguration,"
           f"some other subpage might! {bcolors.YELLOW} i.e the root might not have POST as accepted method, but some subpage might!{bcolors.RESET}")

@@ -56,7 +56,7 @@ def run_nmap_scan(targets: list, nmapcmdlet : list, verbose: int, output_prefix=
         nmapfullcmd = ['nmap'] + nmapcmdlet + nmaptargetlist + ['-oX', xml_path]
         # Remove the first element if it's an option like "-sn"
 
-        print(f"{bcolors.WARNING}[i] Running nmap: {' '.join(nmapfullcmd)}{bcolors.RESET}")
+        print(f"{bcolors.WARNING}[i] Running nmap: {' '.join(nmapfullcmd)}{bcolors.OKCYAN}")
 
         subprocess.run(
             ["nmap"] + nmaptargetlist + ["-oX", xml_path],

@@ -70,7 +70,7 @@ def dns_domain_discovery(args):
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
     print(f"\n{bcolors.YELLOW}[i] Various bruteforcing operations might be performed on the base domain, such as bruteforcing TLDs or subdomains with a wordlist. {bcolors.RESET}")
-    print(f"\n{bcolors.YELLOW}[i] This can cause inestability or service disruptions or be noisy in in-real-life scenarios {bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] This can cause instability or service disruptions or be noisy in in-real-life scenarios {bcolors.RESET}")
     print(f"\n{bcolors.YELLOW}[i] Another way is via OSINT, like searching or bruteforcing subdomains via the internet (a search engine).{bcolors.RESET}")
 
     if args.verbose > 2:

@@ -1,6 +1,6 @@
 import asyncio
 
-
+from core.config import bcolors
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory, current_project
 from tunneling.ssh_pfwd import start_local_forward, start_reverse_forward, start_dynamic_socks
 
@@ -23,7 +23,6 @@ def inittunnelscanargparser(general_parser, commonparser):
                                   help="Path to an identity file to use for the SSH connection with the pivot machine")
     p_directforward.add_argument("--credentials", nargs=1,
                                   help="A file with the password to use for the SSH connection with the pivot machine. Directly using the password aborts the script.")
-    p_directforward.set_defaults(func=local_forward)
 
     # --- Reverse forward
     p_reverseforward = tunnel_subparsers.add_parser("reverse", parents=[commonparser],
@@ -72,6 +71,9 @@ def local_forward(args):
       print(args)
       print(f"[recon:ssh diret] project={args.project} verbose={args.verbose}")
 
+    print(f"\n{bcolors.YELLOW}[i] Local tunnels create an SSH connection from attacker to target. Remember that this tunnel is not bidirectional {bcolors.OKCYAN}")
+    print(f"\n{bcolors.YELLOW}[i] Meaning that any connection outbound created from the target will probably not succeed through the same tunnel {bcolors.OKCYAN}")
+
     # Get target domains from targets
     asyncio.run(start_local_forward(args.user, args.pivot, args.localtarget,args.localport, args.remotetarget, args.remoteport,args.identity,args.credentials))
 
@@ -87,6 +89,9 @@ def reverse_forward(args):
       print(args)
       print(f"[recon:ssh reverse] project={args.project} verbose={args.verbose}")
 
+    print(f"\n{bcolors.YELLOW}[i] Reverse  tunnels create an SSH connection from target to attacker. Remember that this tunnel is not bidirectional {bcolors.OKCYAN}")
+    print(f"\n{bcolors.YELLOW}[i] Meaning that any connection outbound created from the attacker will not succeed through the same tunnel{bcolors.OKCYAN}")
+
     # Get target domains from targets
     asyncio.run(start_reverse_forward(args.user, args.host, args.pivotip, args.pivotport, args.localtarget, args.localport,args.identity,args.credentials))
 
@@ -98,6 +103,8 @@ def dynamic_forward(args):
     """
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
+    print(f"\n{bcolors.YELLOW}[i] Dynamic tunnels allow for bidirectional connection via a SOCKS proxy server and the proxychains application, without the need of specifying ports  {bcolors.OKCYAN}")
+    print(f"\n{bcolors.YELLOW}[i] Although this kind of tunnels are flexible, some apps, like nmap, might not function properly when not working in a direct-connection basis with the target {bcolors.OKCYAN}")
 
     if args.verbose > 2:
       print(args)

@@ -36,7 +36,7 @@ def whatwebexecutor(targets):
         wwcmd = ["whatweb", "-v", "-a 3", f"{target}",
              f"--log-json={context_manager.current_project}/scans/webtech/whatweb_{safestring}.json"]
 
-        print(f"{bcolors.WARNING}[i] Running whatweb: {' '.join(wwcmd)}{bcolors.RESET}")
+        print(f"{bcolors.WARNING}[i] Running whatweb: {' '.join(wwcmd)}{bcolors.OKCYAN}")
 
         status = subprocess.run(
             wwcmd,

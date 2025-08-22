@@ -30,7 +30,7 @@ def standard_ip_query(targets, nameserver=None):
         output_path = output_dir / f"dnsstdquery_{safestring}.json"
         cmd = ["dnsrecon", "-t", "std", "-d", target, "-j", str(output_path)] + nameserverarg
 
-        print(f"[+] Scanning {target} with dnsrecon...")
+        print(f"{bcolors.WARNING}[i] Running dnsrecon: {' '.join(cmd)}{bcolors.OKCYAN}")
         try:
             subprocess.run(cmd, check=True)
             print(f"[+] Finished scanning {target}")
@@ -40,6 +40,8 @@ def standard_ip_query(targets, nameserver=None):
 def is_dns_server(address):
     try:
         # Attempt to resolve a known domain using the provided address
+        print(f"{bcolors.WARNING}[i] This script checks, making an standard resolve query, if the ip given is a domain name Server.")
+
         dns.query.udp(dns.message.make_query('google.com', dns.rdatatype.A), address)
         return True
     except Exception:
@@ -67,6 +69,8 @@ def check_zone_transfer(targets, nameserver=None):
         cmd = ["dig", "@" + nameserver, target,"axfr"]
 
         print(f"[+] Scanning {target} with dnsrecon via {nameserver} nameserver...\n")
+        print(f"{bcolors.WARNING}[i] Running dig: {' '.join(cmd)}{bcolors.OKCYAN}")
+
         try:
             result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE)
             print(f"[+] Finished scanning {target}")
