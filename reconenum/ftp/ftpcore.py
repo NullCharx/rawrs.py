@@ -1,3 +1,4 @@
+from core.config import bcolors
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from reconenum.ftp.ftptools import run_ftp_anon_check
 from reconenum.parser import parse_ftp_list, parse_ip_inputs
@@ -27,6 +28,13 @@ def check_ftp_anon(args):
     if args.verbose > 2:
         print(args)
         print(f"[recon:ftp anon] project={args.project} verbose={args.verbose}")
+
+    print(f"\n{bcolors.YELLOW}[i]Sometimes FTP allows anonymous login, which can be used to gather information about the server and its files. "
+          f".{bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i]Anonymous FTPs are usually disabled or restricted to certain directories, but it is worth checking, specially if it allows for file upload. "
+          f".{bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i]Tools like NMAP can be used to check it. Anonymous login most usually works with the pair anonymous:anonymous, but some servers might be configured otherwise, like ftp:ftp or user:user. "
+          f".{bcolors.RESET}")
     parsedips = parse_ip_inputs(args.targets, args.auto, args.verbose)
     parsedtargets = parse_ftp_list(parsedips, args.auto)
     run_ftp_anon_check(parsedtargets)

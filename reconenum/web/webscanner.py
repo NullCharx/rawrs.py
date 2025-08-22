@@ -1,4 +1,5 @@
 from core import context_manager
+from core.config import bcolors
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, parse_fuzzer
 from reconenum.nmap.nmaptools import parsealivehosts
@@ -18,6 +19,10 @@ def what_wapp_fingerprint(args):
     setcurrentenvproject(args)
     loadProjectContextOnMemory()
 
+    print(f"\n{bcolors.YELLOW}[i] Web fingerprinting is the process of identifying the technologies used by a web application, such as web servers, frameworks, and libraries."
+          f".{bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] This script uses whatweb but the google extension wappalizer is also recommended to use manually .{bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] Fingerprinting can provide potential technologies with flaws or vulnerabilites that can be exploited under the right conditions .{bcolors.RESET}")
     if args.verbose > 2:
         print(args)
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
