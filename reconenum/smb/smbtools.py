@@ -1,27 +1,81 @@
-from reconenum.nmap.nmaptools import parsealivehosts
-from reconenum.parser import parse_ip_inputs
+import subprocess
+from pathlib import Path
+from urllib.parse import urlparse
+import json
+import socket
+
+from impacket import dcerpc
+from impacket.dcerpc.v5 import samr
+from impacket.examples.secretsdump import LocalOperations
+from impacket.nmb import NetBIOS
+from impacket.smbconnection import SMBConnection
+
+from core import context_manager
+from core.config import bcolors
 
 
-def smb_vulns(args):
+def run_smb_anon_check(targets, timeout=5, verbose:int= 0, auto:bool=False):
     """
-    Scan SMB services for known vulnerabilities (MS17-010, etc).
-
-    Steps:
-      - Parse targets
-      - Run crackmapexec with vuln modules
-      - Aggregate results
-
-    Usage:
-        smb vulns -t 192.168.1.0/24
+    Given a target list presupposed to have been parsed as smb://ip:port,
+    check if it allows anonymous login.
     """
-    subargs = parse_ip_inputs(args.targets, args.auto, args.verbose)
-    alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)
-    parsedtargets = parse_smb_targets(alivetargets, subargs)
+    output_dir = Path(context_manager.current_project) / "scans" / "smb"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    results = crackmapexec_smbexecutor(parsedtargets, "vulns", args.user, args.password, args.domain)
+    anonlogintargets = {}
+    for target in targets:
+        parsed = urlparse(target)
+        host = parsed.hostname
+        port = parsed.port or 445  # default SMB port
+        print(f"\n{bcolors.YELLOW}[i] Trying smb {host}:{port} with anonymous credentials. here are some commands use to login anonimously:...")
+        print(f"{bcolors.WARNING}[i] smbclient -L //{host}:{port}")
+        print(f"{bcolors.WARNING}[i] smbmap -H {host}:{port} -u "" -p """)
+        print(f"{bcolors.WARNING}[i] cme smb {host}:{port} -u '' -p '' / netexec smb {target} -u '' -p '' {bcolors.OKCYAN}")
 
-    aggregate_smbvulns(
-        results,
-        f"{context_manager.current_project}/results/smb_vulns.json",
-        args.overwrite,
-    )
+        try:
+            # Impacket SMBConnection args: remoteName, remoteHost, sess_port, timeout
+            smb = SMBConnection(remoteName=host, remoteHost=host, sess_port=port, timeout=timeout)
+            smb.login('', '')  # anonymous = empty user/pass
+
+            print(f"{bcolors.OKGREEN}[+] {host}:{port} allows anonymous login{bcolors.RESET}")
+            anonlogintargets[f"{host}:{port}"] = True
+            smb.logoff()
+
+        except Exception as e:
+            # Failures include STATUS_LOGON_FAILURE and timeouts
+            if isinstance(e, socket.timeout):
+                print(f"{bcolors.WARNING}[!] {host}:{port} connection timeout{bcolors.RESET}")
+            else:
+                print(f"{bcolors.FAIL}[-] {host}:{port} does NOT allow anonymous login ({e}){bcolors.RESET}")
+            anonlogintargets[f"{host}:{port}"] = False
+
+    return anonlogintargets
+
+
+def run_smb_full_enum(targets, args):
+    """
+    Run full SMB enumeration (-A) on a list of targets using enum4linux-ng.
+    Saves results into scans/smb folder.
+    """
+    output_dir = Path(context_manager.current_project) / "scans" / "fuzz"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    results = {}
+    for target in targets:
+        parsed = urlparse(target)
+        host = parsed.hostname or target
+        print(f"\n[*] Running enum4linux-ng full (-A) against {host}")
+
+        cmd = [
+            "enum4linux-ng",
+            f"{host}", "-A",
+            "-oJ", f"{context_manager.current_project}/scans/smb/enum4linux_{host}.json",
+            "-R", "-C", "-v"]
+
+        result = subprocess.run(cmd, capture_output=False if args.verbose>1 else True)
+        if result.returncode != 0:
+            print(f"[!] enum4linux-ng failed on {target}: {result.stderr.strip()}")
+            return None
+
+    return results
+

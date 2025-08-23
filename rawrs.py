@@ -398,6 +398,20 @@ def init_environment(verbosity,config):
     else:
         if verbosity > 2:
             print(f"{bcolors.OKGREEN}[+] proxychains installed{bcolors.RESET}")
+    if not shutil.which("enum4linux-ng"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] enum4linux-ng is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["apt", "install", "enum4linux-ng"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] enum4linux-ng couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] enum4linux-ng installed{bcolors.RESET}")
 
     #Create default project
     if not checkdirectoryisproject("cwd"):

@@ -1,8 +1,9 @@
 prompt_toolkit~=3.0.51
 Pygments~=2.19.1
-requests~=2.32.4
+requests~=2.32.5
 colorama~=0.4.6
 python3-Wappalyzer~=0.1.22
 python-Wappalyzer~=0.3.1
 droopescan~=1.45.1
 dnspython~=2.7.0
+impacket~=0.12.0

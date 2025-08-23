@@ -922,3 +922,47 @@ def get_user_and_home_from_path(path: str):
         return user_home
 
     return None  # Return None if the path does not match expected formats
+
+def parse_smb_list(targets,isauto) -> list:
+    scannedlist = []
+
+    if isinstance(targets, dict):
+        # Context dict case
+        for ip, data in targets.items():
+            ports = data.get('ports', [])
+            for port_info in ports:
+                service = port_info.get("service", {})
+                service_name = service.get("name", "").lower()
+                if "smb" in service_name.lower():
+                    port_number = service.get("port", port_info.get("port"))
+                    scannedlist.append(f"smb://{ip}:{port_number}")
+    elif isinstance(targets, list):
+        # Simple list of targets case
+        for target in targets:
+            scannedlist += parse_smb_port_or_scheme(target)
+
+    else:
+        raise TypeError("targets must be either a dict or a list")
+
+    return scannedlist
+
+
+def parse_smb_port_or_scheme(target) -> list:
+    """
+    Check if a target ip (url) has a scheme or port usable for smb analysis. If not its not
+    valid or assume that the target will correctly process an http or https petition
+    :param url:
+    :return:
+    """
+    parsecheck = urlparse(target)
+    if parsecheck.scheme:
+        if parsecheck.scheme == "smb":
+            return [target.hostname + ":445"]
+
+    burl = "bogus://" + target
+    burlparse = urlparse(burl)
+    if burlparse.port:
+        return ["bogus://"+target]
+    else:
+        # If no scheme and no port, default to check both normal and secure default http ports
+        return [burl + ":445"]
