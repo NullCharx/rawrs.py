@@ -4,7 +4,6 @@ import json
 import os
 import re
 from pathlib import Path
-from tabnanny import verbose
 from urllib.parse import urlparse
 
 from core import context_manager

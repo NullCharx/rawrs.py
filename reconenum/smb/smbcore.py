@@ -24,7 +24,7 @@ def smb_std_enum(args):
     run_smb_anon_check(parsedtargets,args.auto, 5, args.verbose,)
 
 
-    run_smb_full_enum(parsedtargets, args)
+    run_smb_full_enum(parsedtargets, args.verbose)
 
 
 def initsmbscanargparser(recon_sub, commonparser):

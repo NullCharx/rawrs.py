@@ -2,9 +2,8 @@
 import asyncio
 import os
 import platform
-from typing import List, Optional
 
-async def start_ligolo_proxy(listen: str = "0.0.0.0:11601", selfcert: bool = True, extra_args: Optional[List[str]] = None) -> asyncio.subprocess.Process:
+async def start_ligolo_proxy(listen: str = "0.0.0.0:11601", selfcert: bool = True, extra_args: list = None) -> asyncio.subprocess.Process:
     cmd = ["ligolo-proxy", "-l", listen]
     if selfcert:
         cmd += ["-selfcert"]
@@ -24,7 +23,7 @@ async def create_ligolo_tun(tun_name: str = "ligolo") -> None:
     if proc.returncode != 0:
         raise RuntimeError(f"Failed to set TUN up: {err.decode()}")
 
-async def add_ligolo_route(cidr: str, tun_name: str = "ligolo", via: Optional[str] = None) -> None:
+async def add_ligolo_route(cidr: str, tun_name: str = "ligolo", via: str = None) -> None:
     if platform.system() != "Linux":
         return
     cmd = ["ip", "route", "add", cidr, "dev", tun_name] if not via else ["ip", "route", "add", cidr, "via", via, "dev", tun_name]
