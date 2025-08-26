@@ -84,8 +84,8 @@ def adtips(args):
     print(f"{bcolors.WARNING}[i] There is a difference between attacking an AD using the IP or the FQDN"
           f"\n usually using the FQDN the auth will default to Kerberos first, while the IP will default to NTLM instead.{bcolors.RESET}\n")
     print(f"{bcolors.WARNING}[i] Remember that the visible Windows machine is NOT the target! The AD is on the internal network"
-          f"targetable after compromising that visible AD joing machine! {bcolors.RESET}\n")
-    print(f"{bcolors.WARNING}[i] Most actions reiquire an autehnticated account. Kerbrute can be used to bruteforce"
+          f"targetable after compromising that visible AD joint machine! {bcolors.RESET}\n")
+    print(f"{bcolors.WARNING}[i] Most actions reiquire an authenticated account. Kerbrute can be used to bruteforce"
           f"valid users.{bcolors.RESET}\n")
     print(f"{bcolors.WARNING}[i] There might be times where you don't need to crack a hash to use it in a ticket. This is "
           f"known as pass-the-hash{bcolors.RESET}\n")

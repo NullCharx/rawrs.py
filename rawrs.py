@@ -9,6 +9,7 @@ from core.config import bcolors, load_global_config, save_global_config
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from core.project_manager.projects import create_project, checkdirectoryisproject
 from reconenum.reconmain import initreconenumsubparsers
+from transfer.transfercore import inittransferscanargparser
 from tunneling.tunnelcore import inittunnelscanargparser
 
 splash = ["""
@@ -148,8 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
     inittunnelscanargparser(menusubparser, common)
 
     # ===================== TRANSFER =====================
-    p_transfer = menusubparser.add_parser("transfer", parents=[common], help="Transfer tools/files")
-    p_transfer.set_defaults(func=cmd_transfer)
+    inittransferscanargparser(menusubparser,common)
 
     # ===================== OSINT =====================
     p_osint = menusubparser.add_parser("osint", parents=[common], help="Passive info gathering")
