@@ -2,6 +2,7 @@ import asyncio
 
 from core.config import bcolors
 from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory, current_project
+from tunneling.ligolo_tools import ligolo_guide_steps
 from tunneling.ssh_pfwd import start_local_forward, start_reverse_forward, start_dynamic_socks
 
 
@@ -59,6 +60,10 @@ def inittunnelscanargparser(general_parser, commonparser):
                                   help="Whether the script should try to adjust the proxychains configuration automatically. If not set, the user should manually adjust the proxychains configuration to use the dynamic forward port.")
     p_dynamicforward.set_defaults(func=dynamic_forward)
 
+    p_ligolong = tunnel_subparsers.add_parser("ligolo-ng", parents=[commonparser],
+                                                   help="Shows a step by step guide to set up a ligolo-ng proxy connection")
+    p_ligolong.set_defaults(func=ligolo_guide)
+
 def local_forward(args):
     """
     Start a local SSH port forward (local port -> remote port).
@@ -112,3 +117,22 @@ def dynamic_forward(args):
 
     # Get target domains from targets
     asyncio.run(start_dynamic_socks(args.user, args.host, args.localtarget, args.localport, args.identity,args.credentials, args.autoconfig))
+
+
+def ligolo_guide(args):
+    """
+    Start a local SSH port forward (local port -> remote port).
+
+    """
+    setcurrentenvproject(args)
+    loadProjectContextOnMemory()
+    print(f"\n{bcolors.YELLOW}[i] Ligolo-ng is a tool that enables the bidirectional data transfer between two machines.\n"
+          f"Instead of using ssh tunnels, it uses a direct tunnel interface to the target without the need of admin privileges  {bcolors.OKCYAN}")
+    print(f"\n{bcolors.YELLOW}[i] Since ligolo-ng has its own Terminal interface, it can't be directly ran on the script. A guide to deploy it will be printed instead {bcolors.OKCYAN}")
+
+    if args.verbose > 2:
+      print(args)
+      print(f"[recon:ssh dynamic] project={args.project} verbose={args.verbose}")
+
+    # Get target domains from targets
+    ligolo_guide_steps()
