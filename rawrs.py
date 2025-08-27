@@ -5,12 +5,12 @@ import shutil
 import subprocess
 import sys
 
-from core.config import bcolors, load_global_config, save_global_config
-from core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
-from core.project_manager.projects import create_project, checkdirectoryisproject
-from reconenum.reconmain import initreconenumsubparsers
-from transfer.transfercore import inittransferscanargparser
-from tunneling.tunnelcore import inittunnelscanargparser
+from rawrs.core.config import bcolors, load_global_config, save_global_config
+from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
+from rawrs.core.project_manager.projects import create_project, checkdirectoryisproject
+from rawrs.reconenum.reconmain import initreconenumsubparsers
+from rawrs.transfer.transfercore import inittransferscanargparser
+from rawrs.tunneling.tunnelcore import inittunnelscanargparser
 
 splash = ["""
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣀⡇⠀⠀⠀⠀⠚⠉⠈⠓⣦⡀⠀⠀⠀⠀⠀⠀⡿⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀
