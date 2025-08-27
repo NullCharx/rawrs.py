@@ -28,8 +28,6 @@ def initreconenumsubparsers(menusubparser, commonparser):
         help="Port/service scans & protocol-specific enumeration",
         description=(
             "Scan subtool for ports, services, and protocols, inlcuding tools like dns checks, anon login checks and more\n\n"
-            "Examples:\n"
-            "  rawrs.py recon nmap scan -o 192.168.1.0/24\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
