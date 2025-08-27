@@ -440,7 +440,7 @@ def init_environment(verbosity,config):
 def main():
     #Splash
     print(f"{bcolors.OKBLUE}{bcolors.BOLD}{random.choice(splash)}{bcolors.ENDC}")
-    print(f"{bcolors.OKBLUE}Really Awesome Recon And Scan tool (RAWRS) 0.2.a{bcolors.ENDC}")
+    print(f"{bcolors.OKBLUE}Really Amazing Recon And Scan tool (RAWRS) 1.0.a{bcolors.ENDC}")
 
     #Check sudo
     if os.getuid() != 0:
