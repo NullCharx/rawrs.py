@@ -9,6 +9,7 @@ from rawrs.core.environment import load_global_config, save_global_config, init_
 from rawrs.core.staticdata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.core.project_manager.projects import create_project, checkdirectoryisproject
+from rawrs.osint.osintcore import cmd_osint
 from rawrs.reconenum.reconmain import initreconenumsubparsers
 from rawrs.transfer.transfercore import inittransferscanargparser
 from rawrs.tunneling.tunnelcore import inittunnelscanargparser
@@ -82,28 +83,7 @@ splash = ["""
 
 
 
-def cmd_transfer(args):
-    """
-    Handler for the data transfer commands
-    :param args: arguments to be passed to the argument subtool
-    :return:
-    """
-    setcurrentenvproject(args)
-    loadProjectContextOnMemory()
-    if args.verbose < 2:
-        print("[transfer] (placeholder)")
 
-def cmd_osint(args):
-    """
-    Handler for the osint commands
-    :param args: arguments to be passed to the osint subtool
-    :return:
-    """
-    setcurrentenvproject(args)
-    loadProjectContextOnMemory()
-
-    if args.verbose < 2:
-        print(f"[osint] target={args.target}")
 
 def cmd_gui(args):
     """
@@ -128,19 +108,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Main parser object
     mainparser = argparse.ArgumentParser(
-        prog="rawrs.py",
-        description="A tool to automate repetitive recon and scanning tasks (OSCP-style).",
+        prog="Really Awesome Recon and Scan tool",
+        description="A learning tool to automate repetitive recon and scanning tasks (OSCP-style).",
     )
     menusubparser = mainparser.add_subparsers(dest="command", required=True)
 
     # ========== COMMON OPTIONS FOR SUBTOOLS ==========
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--project", default="cwd", help="Path to project to operate on. (Default asumes script is ran inside a rawrs.py project folder)")
+    common.add_argument("--project", default="cwd", help="Path to project to operate on. (Default assumes script is ran inside a rawrs.py project folder)")
     common.add_argument("-v", "--verbose", action="count", default=0, help="Increase verbosity")
-
-    # ===================== GUI =====================
-    p_gui = menusubparser.add_parser("gui", parents=[common], help="Launch TUI/GUI mode")
-    p_gui.set_defaults(func=cmd_gui)
 
     # ============ PORT / SERVICE ENUM ============
     initreconenumsubparsers(menusubparser, common)
@@ -156,6 +132,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_osint = menusubparser.add_parser("osint", parents=[common], help="Passive info gathering")
     p_osint.add_argument("--target", required=True)
     p_osint.set_defaults(func=cmd_osint)
+
+
+    # ===================== GUI =====================
+    p_gui = menusubparser.add_parser("gui", parents=[common], help="Launch TUI/GUI mode")
+    p_gui.set_defaults(func=cmd_gui)
+
 
     return mainparser
 
