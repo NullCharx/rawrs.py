@@ -1,6 +1,6 @@
 import asyncio
 
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.tunneling.ligolo_tools import ligolo_guide_steps
 from rawrs.tunneling.ssh_pfwd import start_local_forward, start_reverse_forward, start_dynamic_socks

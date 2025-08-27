@@ -1,5 +1,5 @@
 
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 
 def ligolo_guide_steps():

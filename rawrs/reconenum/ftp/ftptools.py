@@ -6,7 +6,7 @@ from socket import socket
 from urllib.parse import urlparse
 
 from rawrs.core import context_manager
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 
 def run_ftp_anon_check(targets, timeout=5):

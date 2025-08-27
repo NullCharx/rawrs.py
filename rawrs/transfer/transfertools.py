@@ -3,7 +3,7 @@ import socketserver
 import os
 import sys
 
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 
 def start_http_server(port=8000, root_dir="."):

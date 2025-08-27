@@ -1,5 +1,5 @@
 from rawrs.core import context_manager
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 from rawrs.core.context_manager import saveTargetContext, setTargets
 from rawrs.reconenum.parser import parse_nmap_full_discovery, parse_nmap_host_discovery
 

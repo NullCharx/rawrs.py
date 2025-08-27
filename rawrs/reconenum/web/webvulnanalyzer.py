@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from rawrs.core import context_manager
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 
 def run_wapiti_scan(args, disable_ssl=False):

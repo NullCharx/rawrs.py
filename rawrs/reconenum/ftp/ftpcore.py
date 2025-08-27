@@ -1,4 +1,4 @@
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.reconenum.ftp.ftptools import run_ftp_anon_check
 from rawrs.reconenum.parser import parse_ftp_list, parse_ip_inputs

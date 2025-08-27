@@ -2,7 +2,7 @@ from rawrs.core import context_manager
 import subprocess
 from pathlib import Path
 
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 
 def fuzzyfind_dictionaries():

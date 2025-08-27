@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from rawrs.core.config import bcolors, GLOBAL_CONFIG_PATH
+from rawrs.core.environment import bcolors, GLOBAL_CONFIG_PATH
 from rawrs.core.project_manager.projects import checkdirectoryisproject
 
 #Manager for session - volatile data, such as targets, for each project.

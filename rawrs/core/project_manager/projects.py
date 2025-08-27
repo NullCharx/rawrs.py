@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from rawrs.core.config import bcolors
+from rawrs.core.environment import bcolors
 
 # Required base folders and files for the project
 project_folders = ["results", "scans","tunnels"]
