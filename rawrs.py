@@ -5,7 +5,8 @@ import shutil
 import subprocess
 import sys
 
-from rawrs.core.environment import bcolors, load_global_config, save_global_config, init_environment
+from rawrs.core.environment import load_global_config, save_global_config, init_environment
+from rawrs.core.globaldata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.core.project_manager.projects import create_project, checkdirectoryisproject
 from rawrs.reconenum.reconmain import initreconenumsubparsers

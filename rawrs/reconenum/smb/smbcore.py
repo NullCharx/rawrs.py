@@ -1,4 +1,4 @@
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.reconenum.parser import parse_ip_inputs, parse_smb_list
 from rawrs.reconenum.smb.smbtools import run_smb_anon_check, run_smb_full_enum

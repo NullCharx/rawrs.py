@@ -1,4 +1,4 @@
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.reconenum.dns.dnstools import standard_ip_query, check_zone_transfer
 from rawrs.reconenum.parser import parse_ip_inputs, dns_std_aggregator

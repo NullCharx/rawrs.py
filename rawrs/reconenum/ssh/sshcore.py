@@ -1,4 +1,4 @@
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 
 
 def initsshscanargparser(recon_sub, commonparser):

@@ -1,4 +1,4 @@
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.transfer.transfertools import start_http_server, transftips
 

@@ -1,5 +1,5 @@
 from rawrs.core import context_manager
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
 from rawrs.reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, parse_fuzzer
 from rawrs.reconenum.nmap.nmaptools import parsealivehosts

@@ -9,7 +9,7 @@ import dns.resolver
 import dns.query
 
 from rawrs.core import context_manager
-from rawrs.core.environment import bcolors
+from rawrs.core.globaldata import bcolors
 from rawrs.reconenum.parser import parse_dig_command
 
 
