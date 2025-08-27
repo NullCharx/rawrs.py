@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from rawrs.core import context_manager
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 
 """
 Parsing of any arguments or command output of any of the subtools go in this file

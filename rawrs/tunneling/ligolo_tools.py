@@ -1,4 +1,4 @@
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 
 
 def ligolo_guide_steps():

@@ -6,7 +6,7 @@ import socket
 from impacket.smbconnection import SMBConnection
 
 from rawrs.core import context_manager
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 
 
 def run_smb_anon_check(targets, timeout=5, verbose:int= 0, auto:bool=False):

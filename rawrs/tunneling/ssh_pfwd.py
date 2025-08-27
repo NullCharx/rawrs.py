@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from rawrs.core import context_manager
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 from rawrs.reconenum.parser import get_user_and_home_from_path
 
 

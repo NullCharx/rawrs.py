@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 from rawrs.core import context_manager
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 from rawrs.reconenum.nmap.nmaptools import run_nmap_scan
 from rawrs.reconenum.smb.smbtools import run_smb_full_enum
 

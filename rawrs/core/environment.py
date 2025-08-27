@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 
-from rawrs.core.globaldata import bcolors, GLOBAL_CONFIG_PATH, DEFAULT_CONFIG
+from rawrs.core.staticdata import bcolors, GLOBAL_CONFIG_PATH, DEFAULT_CONFIG
 from rawrs.core.project_manager.projects import checkdirectoryisproject, create_project
 
 
@@ -32,7 +32,7 @@ def save_global_config(config):
     with open(GLOBAL_CONFIG_PATH, "w") as f:
         json.dump(config, f, indent=2)
 
-def init_environment(verbosity,config):
+def init_dependencies(verbosity, config):
     """
     Checks dependencies, creates the default project
     :param verbosity:

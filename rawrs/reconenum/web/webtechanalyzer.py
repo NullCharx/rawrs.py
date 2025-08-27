@@ -1,7 +1,7 @@
 import os
 import subprocess
 from rawrs.core import context_manager
-from rawrs.core.globaldata import bcolors
+from rawrs.core.staticdata import bcolors
 
 
 #use system program instead pf pythonas its very linted
