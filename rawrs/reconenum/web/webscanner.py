@@ -56,7 +56,7 @@ def webvuln(args):
 
     if args.verbose > 2:
         print(args)
-        print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
+        print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(ip_cleaner(subargs), args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
@@ -66,6 +66,8 @@ def webvuln(args):
     print(webtips[0])
 
     print(f"\n{bcolors.YELLOW}[i] Always research vulnerabilities and exploits for target systems and versions for yourself too!{bcolors.OKCYAN}\n")
+    print(webtips[3])
+
     run_wapiti_scan(parsedtargets,False,args.verbose)
     run_nikto_scan(parsedtargets)
 
@@ -87,11 +89,11 @@ def cmsscan(args):
     print(f"\n{bcolors.WARNING}[i] Scripts and misconfigurations available for the CMS can potentially be used to infiltrate a target system")
     print(f"\n{bcolors.WARNING}[i] Most times you will find yourself getting access to a regular user (a blogger, a customer), and then find a way"
           f"to escalate to either the CMS admin or to the server itself via CMS scripts or other web or core CMS misconfigurations/vulnerabilities!")
-    print(f"{bcolors.YELLOW}[If you manage to escalate to admin, check the php editor and change a script that loads (or can be for loaded/reloaded) into the page to run arbitrary code{bcolors.OKCYAN}[")
+    print(f"{bcolors.YELLOW}[i] If you manage to escalate to admin, check the php editor and change a script that loads (or can be for loaded/reloaded) into the page to run arbitrary code{bcolors.OKCYAN}[")
 
     if args.verbose > 2:
         print(args)
-        print(f"[recon:web vuln] project={args.project} verbose={args.verbose}")
+        print(f"[recon:web cms] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     wpscanoutput = run_wpscan_scan(subargs, args.verbose, args.auth, args.cookies, args.userdict, args.passdict)
     #Don't parse wpscan ouput;
@@ -105,11 +107,18 @@ def basicfuzzing(args):
     if args.verbose > 2:
         print(args)
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
+    print(f"{bcolors.YELLOW}[i] Fuzzing can be interesting to find public directories that might not be reachable from the front pages.{bcolors.RESET}")
+
+    print(f"\n{bcolors.YELLOW}[i] Firstly let's check which of the provided targets is alive and has a web on one of its ports .{bcolors.RESET}")
+    print(f"{bcolors.YELLOW}[i] Usually when done manually you can check the output of the nmap scan and then target specific ports with http or https services..{bcolors.RESET}")
+
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
     alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
+
+    print(f"\n{bcolors.YELLOW}[i] After filtering out non-web targets, run fuff. .{bcolors.RESET}")
     run_directory_fuzzing(parsedtargets, args) #Perform fuzzing
-    parse_fuzzer(None,parsedtargets) #Generate summary
+    parse_fuzzer(parsedtargets) #Generate summary
 
 webtips = [f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages and checking manually is always a good idea\n"
            f"[i] Remember that while automated vulnerability tools might be a good start, there are various options not used in this script, as well as some flaws that might not appear on the scans the first time",

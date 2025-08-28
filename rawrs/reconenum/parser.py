@@ -299,6 +299,9 @@ def parse_webtechresults(listoftargets, output_path = None, overwrite:bool = Fal
             target = entry.get("target", "unknown")
             plugins = entry.get("plugins", {})
 
+            if not overwrite and target in results and target != "unknown":
+                continue
+
             target_info = {}
 
             # Extract basic information if available
@@ -543,6 +546,10 @@ def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False
     :param parsedtargets:
     :return:
     """
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "results" / "webvulns_aggregated.json"
+    else:
+        output_path = Path(output_path)
 
     if not overwrite:
         if os.path.exists(output_path):
@@ -552,11 +559,6 @@ def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False
             aggregated = {}
     else:
         aggregated = {}
-
-    if not output_path:
-        output_path = Path(context_manager.current_project) / "results" / "webvulns_aggregated.json"
-    else:
-        output_path = Path(output_path)
 
     for target in parsedtargets:
         print(target)
@@ -606,6 +608,8 @@ def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False
                         findings.append({"name": vuln})
         except (FileNotFoundError, json.JSONDecodeError):
             pass
+        if not overwrite and target in aggregated and target != "unknown":
+            continue
 
         # Deduplicate
         unique_findings = []
@@ -619,22 +623,19 @@ def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False
         if unique_findings:
             aggregated[target] = unique_findings
 
-    output_data = [{"target": tgt, "vulnerabilities": vulns} for tgt, vulns in aggregated.items()]
 
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, indent=2)
+        json.dump(aggregated, f, indent=2)
 
     print(f"[+] Aggregated web vulnerabilities written to {output_path}")
 
-def parse_fuzzer(output_path, parsedtargets):
+def parse_fuzzer(parsedtargets,output_path = None, overwrite:bool = False):
     aggregated = {}
 
     if not output_path:
         output_path = Path(context_manager.current_project) / "results" / "fuzzing_aggregated.json"
     else:
         output_path = Path(output_path)
-
-    # Status codes to filter/exclude by default (uninteresting)
 
     for target in parsedtargets:
         print(f"Processing target: {target}")
@@ -986,14 +987,22 @@ def ip_cleaner(iplist, verbose:int =0):
     cleaned = []
 
     for ip in iplist:
-        parsedurl = urlparse(ip)
-        if parsedurl.hostname:
-            if verbose >1:
-                print(ip + "->" + parsedurl.hostname)
-            cleaned.append(parsedurl.hostname)
-        else:
-            parsedurl2 = urlparse("bogus://" + ip)
-            if verbose > 1:
-                print(ip + "->" + parsedurl2.hostname)
-            cleaned.append(parsedurl2.hostname)
+        #if CIDR, return it whole
+        try:
+            ipaddress.ip_network(ip, strict=False)
+            cleaned.append(ip)
+            if "/" in ip:
+                print(f"{bcolors.FAIL}[!] CIDRs are not permitted in this command. Use an IP list instead.{bcolors.RESET}")
+                exit(-1)
+        except ValueError:
+            parsedurl = urlparse(ip)
+            if parsedurl.hostname:
+                if verbose >1:
+                    print(ip + "->" + parsedurl.hostname)
+                cleaned.append(parsedurl.hostname)
+            else:
+                parsedurl2 = urlparse("bogus://" + ip)
+                if verbose > 1:
+                    print(ip + "->" + parsedurl2.hostname)
+                cleaned.append(parsedurl2.hostname)
     return cleaned

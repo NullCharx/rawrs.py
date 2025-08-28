@@ -73,6 +73,21 @@ def init_dependencies(verbosity, config):
         exit(1)
     #context_manager.projects_path = Path(config["projects_dir"])
 
+    if not shutil.which("wordlists"):
+        if verbosity > 2:
+            print(f"{bcolors.FAIL}[-] wordlists is not installed or not in PATH. Trying to install.{bcolors.RESET}")
+        try:
+            result = subprocess.run(
+                ["apt", "install", "wordlists"],
+                capture_output=False,
+            )
+        except Exception:
+            print(f"{bcolors.FAIL}[!] wordlists couldn't be installed. Please manually install go as its needed by some subtools.{bcolors.RESET}")
+            exit(1)
+    else:
+        if verbosity > 2:
+            print(f"{bcolors.OKGREEN}[+] wordlists installed{bcolors.RESET}")
+
     #Seclists
     if not os.path.exists("/usr/share/wordlists/SecLists") and not os.path.exists("/usr/share/SecLists"):
         if verbosity > 2:

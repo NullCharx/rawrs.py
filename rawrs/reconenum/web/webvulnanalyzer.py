@@ -162,7 +162,7 @@ def run_wpscan_scan(args, verbose, auth : str = None, cookies : str = None, path
         if pathpassdict:
             wpscan_cmd.append("--passwords")
             wpscan_cmd.append(args.passdict)
-        print(f"{bcolors.WARNING}[i] Running ffuff: {' '.join(wpscan_cmd)} (This might take a while!){bcolors.OKCYAN}")
+        print(f"{bcolors.WARNING}[i] Running wpscan: {' '.join(wpscan_cmd)} (This might take a while!){bcolors.OKCYAN}")
 
         try:
             subprocess.run(wpscan_cmd,capture_output=False if verbose > 1 else True, check=True)
