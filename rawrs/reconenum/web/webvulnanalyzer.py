@@ -6,7 +6,7 @@ from rawrs.core import context_manager
 from rawrs.core.staticdata import bcolors
 
 
-def run_wapiti_scan(args, disable_ssl=False):
+def run_wapiti_scan(args, disable_ssl=False, verbose : int = 0):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
     output_dir.mkdir(parents=True, exist_ok=True)
     validtargets = []
@@ -45,7 +45,7 @@ def run_wapiti_scan(args, disable_ssl=False):
         print(f"{bcolors.WARNING}[i] Running wapiti: {' '.join(cmd)}{bcolors.OKCYAN}")
 
         try:
-            result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verose >1 else True, check=True)
+            result = subprocess.run(cmd, stderr=subprocess.PIPE if verbose>1 else None, capture_output=False if verbose >1 else True, check=True)
 
             # If Wapiti produces any stderr output, consider scan failed and remove output file
             if result.stderr:
@@ -62,7 +62,7 @@ def run_wapiti_scan(args, disable_ssl=False):
                 output_path.unlink()
     return validtargets
 
-def run_nikto_scan(args, force_ssl=False):
+def run_nikto_scan(args, force_ssl=False, verbose : int = 0):
     output_dir = Path(context_manager.current_project) / "scans" / "webtech"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -108,7 +108,7 @@ def run_nikto_scan(args, force_ssl=False):
         print(f"{bcolors.WARNING}[i] Running nikto: {' '.join(cmd)}{bcolors.OKCYAN}")
 
 
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verbose >1 else True, check=False)
+        result = subprocess.run(cmd, stderr=subprocess.PIPE if verbose > 1 else None, capture_output=False if verbose >1 else True, check=False)
         if result.returncode == 1:
             validtargets.append(target)
         if result.stderr:

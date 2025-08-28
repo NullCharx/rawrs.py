@@ -1,7 +1,8 @@
 from rawrs.core import context_manager
 from rawrs.core.staticdata import bcolors
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
-from rawrs.reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, parse_fuzzer
+from rawrs.reconenum.parser import parse_ip_inputs, parse_webtechresults, parse_web_targets, aggregate_webvulns, \
+    parse_fuzzer, ip_cleaner
 from rawrs.reconenum.nmap.nmaptools import parsealivehosts
 from rawrs.reconenum.fuzzer import run_directory_fuzzing
 from rawrs.reconenum.web.webtechanalyzer import whatwebexecutor
@@ -21,20 +22,27 @@ def what_wapp_fingerprint(args):
 
     print(f"\n{bcolors.YELLOW}[i] Web fingerprinting is the process of identifying the technologies used by a web application, such as web servers, frameworks, and libraries."
           f".{bcolors.RESET}")
-    print(f"\n{bcolors.YELLOW}[i] This script uses whatweb but the google extension wappalizer is also recommended to use manually .{bcolors.RESET}")
     print(f"\n{bcolors.YELLOW}[i] Fingerprinting can provide potential technologies with flaws or vulnerabilites that can be exploited under the right conditions .{bcolors.RESET}")
     if args.verbose > 2:
         print(args)
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
+
+    print(f"\n{bcolors.YELLOW}[i] Firstly let's check which of the provided targets is alive and has a web on one of its ports .{bcolors.RESET}")
+    print(f"{bcolors.YELLOW}[i] Usually when done manually you can check the output of the nmap scan and then target specific ports with http or https services..{bcolors.RESET}")
+
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
-    alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
-    parsedwebtargets = parse_web_targets(alivetargets,subargs)
+    alivetargets = parsealivehosts(ip_cleaner(subargs), args.overwrite, args.verbose)  # List of alive targets
+    #With the alive targets, filter out dead hosts or those with no web on them
+    parsedwebtargets = parse_web_targets(alivetargets,subargs, args.verbose)
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedwebtargets}")
 
-    whatwebresults = whatwebexecutor(parsedwebtargets) #Scan. Only return web targets that were actually scanned
+    print(f"\n{bcolors.YELLOW}[i] After filtering out non-web targets, run whatweb. .{bcolors.RESET}")
+
+    whatwebresults = whatwebexecutor(parsedwebtargets, args.verbose) #Scan. Only return web targets that were actually scanned
     #Whatweb
     finalwebtechresults = parse_webtechresults(whatwebresults, f"{context_manager.current_project}/results/whatweb_aggregated.json", args.overwrite)
+    print(f"\n{bcolors.YELLOW}[i] This script uses whatweb but the browser extension wappalyzer is also recommended to use manually, as well as reading through the sourcecode of the target.{bcolors.RESET}")
 
 
 def webvuln(args):
@@ -50,19 +58,19 @@ def webvuln(args):
         print(args)
         print(f"[recon:web fingerprint] project={args.project} verbose={args.verbose}")
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
-    alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
+    alivetargets = parsealivehosts(ip_cleaner(subargs), args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
     if args.verbose > 2:
         print(f"parsed web targets for fingerprint: {parsedtargets}")
     #Make wapiti and nikto return the correct dicts to parse
+    print(webtips[0])
 
-    print(f"{bcolors.WARNING}[i] Remember that while automated vulnerability tools might be a good start, there are various options"
-          f"not used in this script, as well as some flaws that might not appear on the scans the first time!{bcolors.OKCYAN}")
-    print(f"\n{bcolors.WARNING}[i] Always research vulnerabilities and exploits for target systems and versions for yourself too!{bcolors.OKCYAN}")
-    run_wapiti_scan(parsedtargets)
+    print(f"\n{bcolors.YELLOW}[i] Always research vulnerabilities and exploits for target systems and versions for yourself too!{bcolors.OKCYAN}\n")
+    run_wapiti_scan(parsedtargets,False,args.verbose)
     run_nikto_scan(parsedtargets)
 
-    aggregate_webvulns(None,parsedtargets)
+    aggregate_webvulns(parsedtargets)
+
 def cmsscan(args):
     """
     Scan given targets for CMS (Wordpress, drupal) vulnerabilities
@@ -103,7 +111,8 @@ def basicfuzzing(args):
     run_directory_fuzzing(parsedtargets, args) #Perform fuzzing
     parse_fuzzer(None,parsedtargets) #Generate summary
 
-webtips = [f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages is always a good idea",
+webtips = [f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages and checking manually is always a good idea\n"
+           f"[i] Remember that while automated vulnerability tools might be a good start, there are various options not used in this script, as well as some flaws that might not appear on the scans the first time",
 f"\n{bcolors.YELLOW}[i] If nmap returns {bcolors.WARNING}POST as a permitted http method{bcolors.YELLOW}, or if it is permitted in a subpage of the domain, its as easy as uploading any arbitrary file, like a reverse shell. This can be checked with curl or one of the nmap http scripts which is used in the -sC option, among others",
 f"\n{bcolors.YELLOW}[i] Check {bcolors.WARNING}input elements{bcolors.YELLOW} of the web, like login, search or file upload forms or URL parameters."
           f"\n\n      - This include checking for {bcolors.WARNING}SQL injections{bcolors.YELLOW}, specially in places that might make unsanitized queries to databases (login forms, search forms)"

@@ -3,6 +3,7 @@ import ipaddress
 import json
 import re
 from pathlib import Path
+from tabnanny import verbose
 from urllib.parse import urlparse
 
 from rawrs.core import context_manager
@@ -328,7 +329,7 @@ def parse_webtechresults(listoftargets, output_path = None, overwrite:bool = Fal
 
     return results
 
-def target_web_sorter(targets):
+def target_web_sorter(targets, verbose : int =0):
     """
     Given a target list or project context target dict, determine which targets are web-enabled.
 
@@ -337,7 +338,7 @@ def target_web_sorter(targets):
         - If any port's service name contains 'http' or 'https', add IP:PORT to scannedlist.
 
     If targets is a list (IP addresses or hostnames):
-        - Parse each entry with parse_web_port_or_scheme() to determine the web-enabled addresses.
+        - Parse each entry with parse_web_port_or_scheme() to determine the web-enabled addresses (check for http or https scheme or known ports)
 
     CIDR, single IPs, and IP lists:
         - Either already specify port/protocol (IP:PORT or PROTOCOL://IP)
@@ -364,6 +365,8 @@ def target_web_sorter(targets):
     else:
         raise TypeError("targets must be either a dict or a list")
 
+    if verbose > 1:
+        print(f"scannedlist: {scannedlist}")
     return scannedlist
 
 
@@ -382,6 +385,7 @@ def parse_web_port_or_scheme(url) -> list:
             #if any other scheme was present, not suitable for web analysis
             return []
     else:
+        #Add a ogus scheme so that a port can be parsed
         burl = "bogus://" + url
         burlparse=urlparse(burl)
         if burlparse.port:
@@ -390,9 +394,9 @@ def parse_web_port_or_scheme(url) -> list:
             #If no scheme and no port, default to check both normal and secure default http ports
             return ["http://" + url, "https://" + url]
 
-def filter_alive_targets(alive_list, subargs):
+def filter_alive_targets(alive_list, inputtargets):
     """
-    Filters subargs based on alive_list.
+    Filters a list of targets based on alive_list.
 
     alive_list : list
         List of currently alive targets.
@@ -400,19 +404,19 @@ def filter_alive_targets(alive_list, subargs):
         - If dict (from JSON): remove any keys not present in alive_list.
         - If list (from context or parsed input): return as is.
     """
-    if isinstance(subargs, dict):
+    if isinstance(inputtargets, dict):
         # Keep only keys that are in alive_list
-        return {k: v for k, v in subargs.items() if k in alive_list}
+        return {k: v for k, v in inputtargets.items() if k in alive_list}
 
-    elif isinstance(subargs, list):
+    elif isinstance(inputtargets, list):
         # Already a filtered list — return immediately
-        return subargs
+        return inputtargets
 
     else:
         raise TypeError("subargs must be either a dict or a list-YOU SHOULDN'T BE SEEING HERE")
 
 
-def parse_web_targets(alivetargets, inputtargets):
+def parse_web_targets(alivetargets, inputtargets, verbose : int = 0):
     '''
     Get a list of web enabled targets with valid ports scehemes or URLs
     :param alivetargets: targets scanned and responding (list)
@@ -420,8 +424,8 @@ def parse_web_targets(alivetargets, inputtargets):
     :return:
     '''
     filteredtargets = filter_alive_targets(list(alivetargets.keys()), inputtargets)
-    # Then probably get alivetargets,finaldata and parsedtargets into a common parse method to not clog everything in various methods
-    parsedtargets = target_web_sorter(filteredtargets)  # Parse web identified targets
+    # Now get all those alive targets and parse which of them have a web target
+    parsedtargets = target_web_sorter(filteredtargets, verbose)  # Parse web identified targets
     print(f"[+] Web enabled targets: {len(parsedtargets)}\n")
     return parsedtargets
 
@@ -531,14 +535,23 @@ def normalize_host(target_str):
     return target_str.split(":")[0]
 
 
-def aggregate_webvulns(output_path, parsedtargets):
+def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False):
     """
     Aggreagate and summarize the results of wapiti and nikto under one file
+    :param overwrite:
     :param output_path:
     :param parsedtargets:
     :return:
     """
-    aggregated = {}
+
+    if not overwrite:
+        if os.path.exists(output_path):
+            with open(output_path, "r") as f:
+                aggregated = json.load(f)
+        else:
+            aggregated = {}
+    else:
+        aggregated = {}
 
     if not output_path:
         output_path = Path(context_manager.current_project) / "results" / "webvulns_aggregated.json"
@@ -965,3 +978,22 @@ def parse_smb_port_or_scheme(target) -> list:
     else:
         # If no scheme and no port, default to check both normal and secure default http ports
         return [burl + ":445"]
+
+def ip_cleaner(iplist, verbose:int =0):
+    """
+    Returns ip list without schemes or ports so tools like nmap don't syntax error if ncountering things like ports
+    """
+    cleaned = []
+
+    for ip in iplist:
+        parsedurl = urlparse(ip)
+        if parsedurl.hostname:
+            if verbose >1:
+                print(ip + "->" + parsedurl.hostname)
+            cleaned.append(parsedurl.hostname)
+        else:
+            parsedurl2 = urlparse("bogus://" + ip)
+            if verbose > 1:
+                print(ip + "->" + parsedurl2.hostname)
+            cleaned.append(parsedurl2.hostname)
+    return cleaned

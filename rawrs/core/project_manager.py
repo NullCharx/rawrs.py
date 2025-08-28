@@ -78,14 +78,10 @@ def checkdirectoryisproject(path) -> bool:
     else:
         directory = Path(path)
     # Check if each project folder exists in the target directory
-    for project in project_folders:
-        if not (directory / project).is_dir():  # Check if project folder exists
+    for folder in project_folders:
+        if not (directory / folder).is_dir():  # Check if project folder exists
             return False  # Return False if any folder is missing
-        if folder == "scans":
-            for sub in project_subfolders:
-                path = project_path / folder / sub
-                if not path.exists():
-                    return False
+
     for file in required_files:
         if not (directory / file).is_file():
             return False  # Return False if any required file is missing

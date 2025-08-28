@@ -6,13 +6,14 @@ from rawrs.core.staticdata import bcolors
 
 #use system program instead pf pythonas its very linted
 #make the web target parser, call it from outside here and pass it in to every web method
-def whatwebexecutor(targets):
+def whatwebexecutor(targets, verbose:int =0):
     """
     Calls whatweb executable with given targets- It can be a single target, or a list of targets.
     The list of targets can also be the projects target context to perform the --auto whatweb scan.
     Programatically it can check for any service web port on the target list but it for quickness web
     ports should be checked outside here
 
+    :param verbose: verbosity level
     :param targets: Web-parsed IPs
     :return: web targets that were able to be scanned, as not all http detected ports might actually have a webserver behing them
     """
@@ -40,7 +41,7 @@ def whatwebexecutor(targets):
 
         status = subprocess.run(
             wwcmd,
-            stderr=subprocess.PIPE, capture_output=False, check=True)
+            stderr=subprocess.PIPE if verbose>1 else None, capture_output=False if verbose>1 else True, check=True)
         if status.stderr:
             print(status.stderr.decode())
             os.remove(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json")
