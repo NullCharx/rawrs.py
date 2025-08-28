@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from rawrs.core.staticdata import bcolors, GLOBAL_CONFIG_PATH
-from rawrs.core.project_manager.projects import checkdirectoryisproject
+from rawrs.core.project_manager import checkdirectoryisproject
 
 #Manager for session - volatile data, such as targets, for each project.
 #THe context is saved so that consectuive runs of commands dont redo everything

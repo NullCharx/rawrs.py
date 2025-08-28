@@ -4,7 +4,7 @@ import shutil
 import subprocess
 
 from rawrs.core.staticdata import bcolors, GLOBAL_CONFIG_PATH, DEFAULT_CONFIG
-from rawrs.core.project_manager.projects import checkdirectoryisproject, create_project
+from rawrs.core.project_manager import checkdirectoryisproject, create_project
 
 
 # Globally used elements such as terminal colors, config info and config path
