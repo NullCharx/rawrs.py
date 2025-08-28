@@ -36,6 +36,7 @@ def run_nmap_scan(targets: list, nmapcmdlet : list, verbose: int, output_prefix=
         if isinstance(element, list):
             for target in element:
                 parsed = urlparse(target)
+                #Add a scheme so the port can be read if existing
                 if not parsed.scheme:
                     parsed = urlparse("bogus://" + target)
                 if parsed.port:
@@ -56,7 +57,7 @@ def run_nmap_scan(targets: list, nmapcmdlet : list, verbose: int, output_prefix=
         nmapfullcmd = ['nmap'] + nmapcmdlet + nmaptargetlist + ['-oX', xml_path]
         # Remove the first element if it's an option like "-sn"
 
-        print(f"{bcolors.WARNING}[i] Running nmap: {' '.join(nmapfullcmd)}{bcolors.OKCYAN}")
+        print(f"\n{bcolors.WARNING}[i] Running nmap: {' '.join(nmapfullcmd)}{bcolors.OKCYAN}\n")
 
         subprocess.run(
             ["nmap"] + nmaptargetlist + ["-oX", xml_path],
@@ -119,7 +120,7 @@ def full_discovery(ip_range : list, verbose : int, is_overwrite : bool):
     print(f"{bcolors.OKCYAN}[+] Performing service detection on discovered hosts: {targets}\n...")
     args = ["-sVC","-Pn"]
     full_scan = run_nmap_scan(targets, args, verbose,"full_scan")
-    aggregated_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite)
+    aggregated_scan = parse_nmap_full_discovery(json_data=full_scan, overwrite=is_overwrite, verbose=verbose)
 
     #Sort services on the in-memory context so its quickly accessed instead of reading the scan files
     extract_service_data(aggregated_scan)
@@ -179,7 +180,7 @@ def parsealivehosts(ip_range, is_overwrite, verbose):
           f"so it is recommended to use an ICMP ping scan first to discard non-alive hosts.{bcolors.OKCYAN}")
 
     print(f"{bcolors.OKCYAN}[+] Discovering hosts...")
-    args = ["-sn"]
+    args = ["-sn", "-Pn"]
     host_discovery_results = run_nmap_scan(ip_range, args, verbose, "host_discovery")
     if host_discovery_results.get("Host", []):
         host_discovery_results = parse_nmap_host_discovery(host_discovery_results, "host_discovery")

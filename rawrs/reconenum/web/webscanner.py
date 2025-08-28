@@ -103,22 +103,23 @@ def basicfuzzing(args):
     run_directory_fuzzing(parsedtargets, args) #Perform fuzzing
     parse_fuzzer(None,parsedtargets) #Generate summary
 
-def texttipsweb(args):
-    print(f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages is always a good idea")
-    print(f"\n{bcolors.YELLOW}[i] If nmap returns {bcolors.WARNING}POST as a permitted http method{bcolors.YELLOW}, or if it is permitted in a subpage of the domain, its as easy as uploading any arbitrary file, like a reverse shell.")
-    print(f"\n{bcolors.YELLOW}[i] Check {bcolors.WARNING}input elements{bcolors.YELLOW} of the web, like login, search or file upload forms or URL parameters."
+webtips = [f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages is always a good idea",
+f"\n{bcolors.YELLOW}[i] If nmap returns {bcolors.WARNING}POST as a permitted http method{bcolors.YELLOW}, or if it is permitted in a subpage of the domain, its as easy as uploading any arbitrary file, like a reverse shell. This can be checked with curl or one of the nmap http scripts which is used in the -sC option, among others",
+f"\n{bcolors.YELLOW}[i] Check {bcolors.WARNING}input elements{bcolors.YELLOW} of the web, like login, search or file upload forms or URL parameters."
           f"\n\n      - This include checking for {bcolors.WARNING}SQL injections{bcolors.YELLOW}, specially in places that might make unsanitized queries to databases (login forms, search forms)"
-          f"\n      Also {bcolors.WARNING}XSS{bcolors.YELLOW} that might end up running arbitrary scripts on the server side."
+          f"\n      Also {bcolors.WARNING}RCE{bcolors.YELLOW} that might end up running arbitrary scripts on the server side."
           f"\n\n      - Poorly configured {bcolors.WARNING}upload forms{bcolors.YELLOW} that might let arbitrary files be uploaded under certain circumstances."
           f"\n\n      - Certain {bcolors.WARNING}url parameters{bcolors.YELLOW} (after the url, like: ?paremeter1=value1&paremeter2=value2&paremeter3=value3...) might be vulnerable to injection too if input is not properly sanitzed before being given to whatever is behind"
           f"\n              Take into account that some characters in URLS are formatted differently (and usually handled automatically by the browser) like '.' and '/'"
-          f"\n              You can try using {bcolors.WARNING}php wrappers{bcolors.YELLOW} to gain access to or upload certain files."
+          f"\n              You can try using {bcolors.WARNING}php wrappers{bcolors.YELLOW} to gain access to or upload files."
           f"\n\n      - Use password making tools like cewl or dictionaries like {bcolors.WARNING}rockyou.txt{bcolors.YELLOW} for passwords. In OSCP a password is very likely to be found in that dictionary if it has to be bruteforced."
-          f"\n\n      - Use tools like {bcolors.WARNING}hydra{bcolors.YELLOW} to perform the bruteforce.")
-
-    print(f"\n{bcolors.YELLOW}[i] For others like Drupal or moodle, you can use other tools like Droopescan..")
-    print(f"\n{bcolors.YELLOW}[i] Remember that while the {bcolors.WARNING}root of a webpage (usually the first scanned path) might not have a certain vulnerability or misconfiguration,"
-          f"some other subpage might! {bcolors.YELLOW} i.e the root might not have POST as accepted method, but some subpage might!{bcolors.RESET}")
+          f"\n\n      - Use tools like {bcolors.WARNING}hydra{bcolors.YELLOW} to perform the bruteforce.",
+f"\n{bcolors.YELLOW}[i] For others like Drupal or moodle, you can use other tools like Droopescan..",
+           f"\n{bcolors.YELLOW}[i] Remember that while the {bcolors.WARNING}root of a webpage (usually the first scanned path) might not have a certain vulnerability or misconfiguration, some other subpage might! {bcolors.YELLOW} i.e the root might not have POST as accepted method, but some subpage might!{bcolors.RESET}"
+           ]
+def texttipsweb(args):
+    for tip in webtips:
+        print(tip)
 
 def initwebscanargparser(recon_sub, commonparser):
     # Main "web" command parser
@@ -202,7 +203,7 @@ def initwebscanargparser(recon_sub, commonparser):
     )
 
     p_tip = web_subparsers.add_parser("tips", parents=[commonparser],
-                                       help="Some other tips and actions that can be taken manually")
+                                       help="Some other tips and actions that can be done manually")
     p_tip.set_defaults(func=texttipsweb)
 
 

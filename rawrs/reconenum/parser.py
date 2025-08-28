@@ -40,6 +40,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False,
         if isinstance(input_string, str):
             input_string = [input_string]
 
+        #Check input strings separatedly
         for entry in input_string:
             parts = [p.strip() for p in entry.split(',') if p.strip()]
             for part in parts:
@@ -99,7 +100,7 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False,
                                 ip = ipaddress.ip_address(host)
                                 ips.append(str(ip))
                             except ValueError as e:
-                                # If all checks fails, assume its a domain (non-ip) if allownonip is True for things tools like dns queries.
+                                # If all checks fails, assume its a domain (non-ip) if parsedomains is True for things tools like dns queries.
                                 # Otherwise skip it
                                 if parsedomains:
                                     print(f"\n{bcolors.WARNING}[-] Non-IPs expected: Assuming {part} is a domain.{bcolors.RESET}")
@@ -161,7 +162,7 @@ def parse_nmap_host_discovery(json_data, scantype):
 
     return result
 
-def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False):
+def parse_nmap_full_discovery(json_data, output_path= None, overwrite=False, verbose:int = 0):
     """
     Parses Nmap formatted JSON data (from a -sVC scan) and returns a cleaned dict.
     Also writes to a JSON file with simplified structure.

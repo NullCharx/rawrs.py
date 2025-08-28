@@ -1,4 +1,5 @@
 from rawrs.core.context_manager import setcurrentenvproject, loadProjectContextOnMemory
+from rawrs.core.staticdata import bcolors
 from rawrs.reconenum.nmap.nmaptools import full_discovery
 from rawrs.reconenum.parser import parse_ip_inputs
 
@@ -36,3 +37,4 @@ def cmd_recon_nmapscan(args):
         print(f"[recon:nmapscan] targets={args.targets} overwrite={args.overwrite}")
     subargs = parse_ip_inputs(args.targets, verbose=args.verbose)
     full_discovery(subargs, args.verbose, args.overwrite)
+    print(f"\n{bcolors.YELLOW}[i] Some devices are expected to not respond sometimes or even at all if they are firewalled. Rerunning the scan is sometimes a good idea")

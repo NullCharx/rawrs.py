@@ -108,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # Main parser object
     mainparser = argparse.ArgumentParser(
-        prog="Really Awesome Recon and Scan tool",
+        prog="rawrs.py",
         description="A learning tool to automate repetitive recon and scanning tasks (OSCP-style).",
     )
     menusubparser = mainparser.add_subparsers(dest="command", required=True)
