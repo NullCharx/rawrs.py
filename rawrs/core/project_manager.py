@@ -5,8 +5,23 @@ from pathlib import Path
 from rawrs.core.staticdata import bcolors
 
 # Required base folders and files for the project
-project_folders = ["results", "scans","tunnels"]
+project_folders = ["results", "scans", "tunnels"]
 
+project_subfolders = [
+        "nmap",
+        "nmap/xml",
+        "nmap/json",
+        "webtech",
+        "fuzz",
+        "cms",
+        "dns",
+        "ftp",
+        "ssh",
+        "smtp",
+        "snmp",
+        "smb",
+        "win",
+    ]
 required_files = ['notes.md', 'context.json']
 
 
@@ -20,7 +35,7 @@ def create_project(name, verbosity, config):
     """
     projects_folder = Path(config["projects_dir"])
     project_path = projects_folder / name
-    #If a projects folder doeesnt exist in the current location, create it by default
+    #If a projects folder doeesnt exist in the current set location, create it by default
     if not projects_folder.exists():
         if verbosity > 2:
             print(f"{bcolors.WARNING}[+] Creating projects folder {projects_folder} in this location:{bcolors.RESET}")
@@ -33,19 +48,9 @@ def create_project(name, verbosity, config):
         for folder in project_folders:
             (project_path / folder).mkdir()
             if folder == "scans":
-                (project_path / folder / "nmap").mkdir()
-                (project_path / folder / "nmap"/"xml").mkdir()
-                (project_path / folder / "nmap"/"json").mkdir()
-                (project_path / folder / "webtech").mkdir()
-                (project_path / folder / "fuzz").mkdir()
-                (project_path / folder / "cms").mkdir()
-                (project_path / folder / "dns").mkdir()
-                (project_path / folder / "ftp").mkdir()
-                (project_path / folder / "ssh").mkdir()
-                (project_path / folder / "smtp").mkdir()
-                (project_path / folder / "snmp").mkdir()
-                (project_path / folder / "smb").mkdir()
-                (project_path / folder / "win").mkdir()
+                for sub in project_subfolders:
+                    (project_path / folder / sub).mkdir(parents=True, exist_ok=True)
+
         (project_path / "notes.md").write_text("# Project Notes\n")
         context = {
             "targets": [],
@@ -76,6 +81,11 @@ def checkdirectoryisproject(path) -> bool:
     for project in project_folders:
         if not (directory / project).is_dir():  # Check if project folder exists
             return False  # Return False if any folder is missing
+        if folder == "scans":
+            for sub in project_subfolders:
+                path = project_path / folder / sub
+                if not path.exists():
+                    return False
     for file in required_files:
         if not (directory / file).is_file():
             return False  # Return False if any required file is missing
