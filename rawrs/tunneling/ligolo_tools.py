@@ -64,7 +64,13 @@ f"                 In this case, a self certificate will be used and the agents 
 
     input(f"{bcolors.OKCYAN}\n\nPress enter to continue...\n")
 
-    print(f"\n{bcolors.OKCYAN}[*] Daisychaining in this setup is also possible;\n"
+    print(f"\n{bcolors.YELLOW}[i] Daisychaining in this setup is also possible;\n"
           f"It involves creating extra listener ports on your attacker machine, adding a forward rule on your first agent, and the repeat the above process for the new agent and listener port.")
+
+    input(f"{bcolors.OKCYAN}\n\nPress enter to continue...\n")
+
+    print(f"\n{bcolors.YELLOW}[i]Because the agent is running without privileges, it's not possible to forward raw packets. When you perform a NMAP SYN-SCAN, a TCP connect() is performed on the agent.\n"
+          f"When using nmap, you should use --unprivileged or -PE to avoid false positives.")
+
 
     input(f"\n\nPress enter to end guide...{bcolors.RESET}")

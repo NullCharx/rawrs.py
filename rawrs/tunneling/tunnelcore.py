@@ -14,8 +14,8 @@ def inittunnelscanargparser(general_parser, commonparser):
                                                    help="Directo portforward to reach a target machine through a pivot SSH server")
     p_directforward.add_argument("user", nargs=1, help="User on the pivot machine")
     p_directforward.add_argument("pivot", nargs=1, help="IP or hostname of the pivot machine")
-    p_directforward.add_argument("localtarget", nargs=1,
-                                 help="IP or hostname of the local machine visible to the pivot")
+    p_directforward.add_argument("--localtarget", nargs=1,
+                                 help="IP or hostname of the local machine visible to the pivot. Usually not needed as it defaults to 127.0.0.1")
     p_directforward.add_argument("localport", nargs=1, help="Local port on the local machine to bind")
     p_directforward.add_argument("remotetarget", nargs=1, help="Target IP or hostname to reach through the pivot")
     p_directforward.add_argument("remoteport", nargs=1, help="Remote port on the target machine to reach")
@@ -74,7 +74,7 @@ def local_forward(args):
 
     if args.verbose > 2:
       print(args)
-      print(f"[recon:ssh diret] project={args.project} verbose={args.verbose}")
+      print(f"[recon:ssh direct] project={args.project} verbose={args.verbose}")
 
     print(f"\n{bcolors.YELLOW}[i] Local tunnels create an SSH connection from attacker to target. Remember that this tunnel is not bidirectional {bcolors.OKCYAN}")
     print(f"\n{bcolors.YELLOW}[i] Meaning that any connection outbound created from the target will probably not succeed through the same tunnel {bcolors.OKCYAN}")
@@ -132,7 +132,7 @@ def ligolo_guide(args):
 
     if args.verbose > 2:
       print(args)
-      print(f"[recon:ssh dynamic] project={args.project} verbose={args.verbose}")
+      print(f"[recon:tunel ligologuide] project={args.project} verbose={args.verbose}")
 
     # Get target domains from targets
     ligolo_guide_steps()

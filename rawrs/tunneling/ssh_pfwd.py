@@ -6,7 +6,7 @@ from rawrs.core.staticdata import bcolors
 from rawrs.reconenum.parser import get_user_and_home_from_path
 
 
-async def start_local_forward(user: str, host: str, local_host: str = "localhost", local_port: int = 0, remote_host: str = "0.0.0.0", remote_port: int = 0, identity_file: str = None, password: str = None, ) -> asyncio.subprocess.Process:
+async def start_local_forward(user: str, host: str, local_host: str = "127.0.0.1", local_port: int = 0, remote_host: str = "0.0.0.0", remote_port: int = 0, identity_file: str = None, password: str = None, ) -> asyncio.subprocess.Process:
     """
     Start a local SSH port forward (local port -> remote port).
 
@@ -37,6 +37,8 @@ async def start_local_forward(user: str, host: str, local_host: str = "localhost
         else:
             print("[!] Password file not found, using password directly is not recommended! Aborting.")
             exit(1)
+    if "127.0.0." in local_host[0] or "localhost" in  local_host[0]:
+        local_host[0]  = ""
     cmd += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes",
             "-nNT", "-L", f"{local_host[0]}:{local_port[0]}:{remote_host[0]}:{remote_port[0]}", f"{user[0]}@{host[0]}"]
     print(f"{bcolors.OKGREEN}Running a direct tunnel to {bcolors.BOLD}{bcolors.WARNING}{remote_host[0]} port {remote_port[0]}{bcolors.RESET}{bcolors.OKGREEN} with credentials {bcolors.BOLD}{bcolors.WARNING}{user[0]}@{host[0]}{bcolors.RESET}{bcolors.OKGREEN}. Use {bcolors.BOLD}{bcolors.WARNING}{local_host[0]}:{local_port[0]}{bcolors.RESET} {bcolors.OKGREEN} to contact whatever service is on the remote host.")
@@ -116,31 +118,43 @@ async def start_dynamic_socks(user: str, host: str, socks_host: str = "127.0.0.1
         cmd += ["-i", identity_file]
     else:
         cmd += ["-i", f"{get_user_and_home_from_path(f'{context_manager.current_project}')}/.ssh/id_ed25519"]
-    if identity_file:
-        cmd += ["-i", identity_file]
-    if password:
-        if os.path.exists(password):
-            cmd = ["sshpass", f"-f{password}"] + cmd
-        else:
-            cmd = ["sshpass", f"-p{password}"] + cmd
+
+    if os.path.exists(password):
+        cmd = ["sshpass", f"-f{password}"] + cmd
+    else:
+        cmd = ["sshpass", f"-p{password}"] + cmd
+
     cmd += ["-o", "ServerAliveInterval=30", "-o", "ServerAliveCountMax=3", "-o", "ExitOnForwardFailure=yes",
             "-vvv", "-nNT", "-D", f"{socks_host[0]}:{socks_port[0]}", f"{user[0]}@{host[0]}"]
 
     if updateconfig:
         # Update proxychains configuration if requested
-        proxychains_conf = f"/etc/proxychains.conf"
+        proxychains_conf = "/etc/proxychains.conf"
         if os.path.exists(proxychains_conf):
             with open(proxychains_conf, 'r') as file:
                 lines = file.readlines()
 
+            new_lines = []
+            in_proxylist = False
+            proxyline = f"socks5 {socks_host}:{socks_port}\n"
+
+            for line in lines:
+                new_lines.append(line)
+                if line.strip().lower() == "[proxylist]":
+                    in_proxylist = True
+            # Append only if not already present
+            if in_proxylist and proxyline not in lines:
+                new_lines.append(f"# Added by rawrs.py\n{proxyline}")
+
             with open(proxychains_conf, "w") as file:
-                file.writelines(lines[:-1])
-                file.write(f"\n[ProxyList]\n# Add your dynamic forward here\nsocks5 {socks_host[0]} {socks_port[0]}\n")
-            print(f"{bcolors.OKGREEN}Updated proxychains configuration to use SOCKS proxy at {socks_host[0]}:{socks_port[0]}{bcolors.RESET}")
+                file.writelines(new_lines)
+
+            print(
+                f"{bcolors.OKGREEN}Updated proxychains configuration to use SOCKS proxy at {socks_host}:{socks_port}{bcolors.RESET}")
         else:
             print(f"{bcolors.WARNING}Proxychains configuration file not found, skipping update.{bcolors.RESET}")
 
-    print(f"{bcolors.OKGREEN}Running a reverse dynamic tunne that will forward any data sent via proxychains through {socks_host[0]} port {socks_port[0]}{bcolors.RESET}{bcolors.OKGREEN} with credentials {bcolors.BOLD}{bcolors.WARNING}{user[0]}@{host[0]}{bcolors.RESET}{bcolors.OKGREEN}, masking the data flow as if it was coming from the pivot machine.")
+    print(f"{bcolors.OKGREEN}Running a reverse dynamic tunnel that will forward any data sent via proxychains through {socks_host[0]} port {socks_port[0]}{bcolors.RESET}{bcolors.OKGREEN} with credentials {bcolors.BOLD}{bcolors.WARNING}{user[0]}@{host[0]}{bcolors.RESET}{bcolors.OKGREEN}, masking the data flow as if it was coming from the pivot machine.")
     print(f"command:                  {bcolors.RESET}{' '.join(cmd)}{bcolors.RESET}")
     print(f"{bcolors.UNDERLINE}{bcolors.BOLD}Need to add the following line to /etc/proxychains.conf if you didnt already:\n"
           f"socks5 {socks_host} {socks_port[0]} {bcolors.RESET[0]}")

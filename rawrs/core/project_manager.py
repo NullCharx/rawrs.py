@@ -55,7 +55,7 @@ def create_project(name, verbosity, config):
         context = {
             "targets": [],
             "tunnels": [],
-            "dede": f"Auto-created project: {name}"
+            "desc": f"Auto-created project: {name}"
         }
         with open(project_path / "context.json", "w") as f:
             json.dump(context, f, indent=2)

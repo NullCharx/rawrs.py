@@ -35,7 +35,7 @@ def standard_dns_query(args):
         else:
             print(f"{bcolors.FAIL}[!] Invalid nameserver provided: {args.nameserver}. Execution can't continue.{bcolors.RESET}")
             exit(1)
-        dns_std_aggregator(parsedtargetips)
+        dns_std_aggregator(parsedtargetips, None, args.overwrite, args.verbose)
 
 def zone_transfer(args):
     """Uses dnsrecon to bruteforce subdomains using a wordlist. And also searches on subdomains on bing"""

@@ -718,18 +718,34 @@ def filter_domains(items):
         print(f"{bcolors.FAIL}[!] Non-domain element detected. It won't be used in the current tool:{bcolors.RESET} ", item)
     return domains
 
-def dns_std_aggregator(targets):
+def dns_std_aggregator(targets, output_path=None, overwrite: bool = False, verbose : int =0) :
     """
     Aggregates DNS recon results from JSON files produced by dnsrecon -t std.
     Creates a single JSON file containing all targets, with all record types summarized per target.
     """
-    output_dir = Path(context_manager.current_project) / "results"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    aggregated_file = output_dir / "dnsstdquery_aggregated.json"
+    if not output_path:
+        output_path = Path(context_manager.current_project) / "results" / "dnsstdquery_aggregated.json"
+    else:
+        output_path = Path(output_path)
 
-    all_targets_data = {}
+    # Load existing results if not overwriting
+    if not overwrite and output_path.exists():
+        with open(output_path, "r", encoding="utf-8") as f:
+            old_data = json.load(f)
+            # Convert list -> dict if needed
+            if isinstance(old_data, list):
+                all_targets_data = {item.get("target", f"unknown_{i}"): item for i, item in enumerate(old_data)}
+            else:
+                all_targets_data = old_data
+    else:
+        all_targets_data = {}
 
     for target in targets:
+        if target in all_targets_data and not overwrite:
+            if verbose >1:
+                print(f"Skipping existing target: {target}")
+            continue
+
         safestring = target.replace("://", "_").replace("/", "_")
         source_file = Path(context_manager.current_project) / "scans" / "dns" / f"dnsstdquery_{safestring}.json"
 
@@ -759,10 +775,7 @@ def dns_std_aggregator(targets):
             name = record.get("name")
 
             if rtype in ["A", "AAAA"]:
-                clean_data[rtype].append({
-                    "name": name,
-                    "address": record.get("address")
-                })
+                clean_data[rtype].append({"name": name, "address": record.get("address")})
             elif rtype == "MX":
                 clean_data["MX"].append({
                     "name": name,
@@ -778,10 +791,7 @@ def dns_std_aggregator(targets):
                     "recursive": record.get("recursive")
                 })
             elif rtype == "TXT":
-                clean_data["TXT"].append({
-                    "name": name,
-                    "txt": record.get("txt")
-                })
+                clean_data["TXT"].append({"name": name, "txt": record.get("txt")})
             elif rtype == "SOA":
                 clean_data["SOA"] = {
                     "mname": record.get("mname"),
@@ -802,12 +812,13 @@ def dns_std_aggregator(targets):
 
         all_targets_data[target] = clean_data
 
-    with open(aggregated_file, "w", encoding="utf-8") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_targets_data, f, indent=4)
 
-    print(f"[+] Aggregated DNS results saved for all targets {aggregated_file}")
+    print(f"[+] Aggregated DNS results saved for all targets {output_path}")
 
-def parse_ftp_list(targets,isauto) -> list:
+
+def parse_ftp_list(targets,overwrite:bool = False) -> list:
     scannedlist = []
 
     if isinstance(targets, dict):
