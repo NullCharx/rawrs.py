@@ -92,7 +92,7 @@ def run_directory_fuzzing(targets, args):
         print(f"{bcolors.WARNING}[i] Running ffuff: {' '.join(cmd)}{bcolors.OKCYAN}")
 
         try:
-            subprocess.run(cmd, stderr=subprocess.PIPE, capture_output=False if args.verbose > 1 else True, check=True)
+            subprocess.run(cmd, stderr=subprocess.PIPE if args.verbose>1 else None, capture_output=False if args.verbose > 1 else True, check=True)
             valid_targets.append(target_url)
         except subprocess.CalledProcessError as e:
             print(f"[!] Fuzzing failed on {target_url}: {e}")

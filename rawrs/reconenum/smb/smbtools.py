@@ -22,7 +22,7 @@ def run_smb_anon_check(targets, timeout=5, verbose:int= 0, auto:bool=False):
         parsed = urlparse(target)
         host = parsed.hostname
         port = parsed.port or 445  # default SMB port
-        print(f"\n{bcolors.YELLOW}[i] Trying smb {host}:{port} with anonymous credentials. here are some commands use to login anonimously:...")
+        print(f"\n{bcolors.YELLOW}[i] Trying smb {host}:{port} with anonymous credentials. here are some commands used to login anonimously:...")
         print(f"\n{bcolors.WARNING}[i] smbclient -L //{host}:{port}")
         print(f"\n{bcolors.WARNING}[i] smbmap -H {host}:{port} -u "" -p """)
         print(f"\n{bcolors.WARNING}[i] cme smb {host}:{port} -u '' -p '' / netexec smb {target} -u '' -p '' {bcolors.OKCYAN}")

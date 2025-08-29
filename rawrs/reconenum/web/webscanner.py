@@ -118,7 +118,7 @@ def basicfuzzing(args):
 
     print(f"\n{bcolors.YELLOW}[i] After filtering out non-web targets, run fuff. .{bcolors.RESET}")
     run_directory_fuzzing(parsedtargets, args) #Perform fuzzing
-    parse_fuzzer(parsedtargets) #Generate summary
+    parse_fuzzer(parsedtargets,None,args.overwrite,args.verbose) #Generate summary
 
 webtips = [f"\n{bcolors.YELLOW}[i] While programs like nikto might grab interesting info themselves, {bcolors.WARNING}checking the source code{bcolors.YELLOW} of pages and checking manually is always a good idea\n"
            f"[i] Remember that while automated vulnerability tools might be a good start, there are various options not used in this script, as well as some flaws that might not appear on the scans the first time",

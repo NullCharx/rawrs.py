@@ -21,7 +21,7 @@ def smb_std_enum(args):
     print(f"\n{bcolors.YELLOW}[i] Sometimes SMB  allows anonymous login, which can be used to gather information about the server and its files. "
           f".{bcolors.RESET}")
     print(f"\n{bcolors.YELLOW}[i] This script tries to connec to IPC$. There might be shares that explictly disallow anonymous login. {bcolors.OKCYAN}")
-    run_smb_anon_check(parsedtargets,args.auto, 5, args.verbose,)
+    run_smb_anon_check(parsedtargets,5,  args.verbose, args.auto)
 
 
     run_smb_full_enum(parsedtargets, args.verbose)

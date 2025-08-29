@@ -629,19 +629,30 @@ def aggregate_webvulns(parsedtargets, output_path = None, overwrite:bool = False
 
     print(f"[+] Aggregated web vulnerabilities written to {output_path}")
 
-def parse_fuzzer(parsedtargets,output_path = None, overwrite:bool = False):
-    aggregated = {}
+def parse_fuzzer(parsedtargets,output_path = None, overwrite:bool = False, verbose:int = 0):
 
     if not output_path:
         output_path = Path(context_manager.current_project) / "results" / "fuzzing_aggregated.json"
     else:
         output_path = Path(output_path)
 
+    if not overwrite:
+        if os.path.exists(output_path):
+            with open(output_path, "r") as f:
+                aggregated = json.load(f)
+        else:
+            aggregated = {}
+    else:
+        aggregated = {}
+
     for target in parsedtargets:
         print(f"Processing target: {target}")
         target_url = target if target.startswith("http") else "http://" + target
         safestring = target_url.replace("://", "_").replace("/", "_")
-
+        if target_url in aggregated and not overwrite:
+            if verbose > 1:
+                print(f"Skipping existing target: {target_url}")
+            continue
         fuzzfile = Path(context_manager.current_project) / "scans" / "fuzz" / f"fuzzing_{safestring}.txt"
 
         try:
