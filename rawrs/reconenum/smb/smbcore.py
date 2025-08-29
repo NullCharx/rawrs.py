@@ -23,8 +23,13 @@ def smb_std_enum(args):
     print(f"\n{bcolors.YELLOW}[i] This script tries to connec to IPC$. There might be shares that explictly disallow anonymous login. {bcolors.OKCYAN}")
     run_smb_anon_check(parsedtargets,5,  args.verbose, args.auto)
 
-
+    print(f"\n{bcolors.YELLOW}[i] Enum4linux-ng is a great tool to enumerate SMB servers. It uses a lot of techniques to gather information about the target, including null sessions, shares, users, groups, policies, etc. {bcolors.RESET}")
+    print(f"\n{bcolors.YELLOW}[i] This script runs enum4linux-ng with -A option, which is a comprehensive scan. It might be noisy and take some time, depending on the target. {bcolors.OKCYAN}")
+    print(f"\n{bcolors.WARNING}[i] It also performs RID cycling, which might cause account lockouts if the target has such policies in a real life scenario. Use with caution. {bcolors.OKCYAN}")
+    print(f"\n{bcolors.WARNING}[i] If unsure, ask the client or your manager before running a scan. In a OSCP scenario, scanning in an exhaustive manner and being noisy is preferred.{bcolors.OKCYAN}\n")
     run_smb_full_enum(parsedtargets, args.verbose)
+
+    #TODO parser and aggregator for enum4linux-ng output
 
 
 def initsmbscanargparser(recon_sub, commonparser):
