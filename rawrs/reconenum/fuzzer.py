@@ -1,3 +1,5 @@
+import sys
+
 from rawrs.core import context_manager
 import subprocess
 from pathlib import Path
@@ -8,23 +10,22 @@ from rawrs.core.staticdata import bcolors
 def fuzzyfind_dictionaries():
     """
     Uses fzf to interactively select a wordlist from /usr/share/wordlists.
+    Returns the selected file path as a string.
     """
-
+    # Run fzf interactively, connecting to the terminal
     result = subprocess.run(
-        [
-            "bash", "-c",
-            "find -L /usr/share/wordlists -type f | "
-            "fzf --preview 'head -n 20 {}' --preview-window=down:wrap"
-        ],
-        capture_output=False,
-        text=True,
-        check=True,
+        "find -L /usr/share/wordlists -type f | fzf --preview 'head -n 20 {}' --preview-window=down:wrap",
+        shell=True,
+        stdin=sys.stdin,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=sys.stderr,
+        text=True,
+        check=True
     )
+
+    # The selected wordlist is in stdout
     wordlist = result.stdout.strip()
     return wordlist
-
 
 def run_directory_fuzzing(targets, args):
     """Fuzzes targets.

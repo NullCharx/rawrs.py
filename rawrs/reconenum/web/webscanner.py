@@ -113,7 +113,7 @@ def basicfuzzing(args):
     print(f"{bcolors.YELLOW}[i] Usually when done manually you can check the output of the nmap scan and then target specific ports with http or https services..{bcolors.RESET}")
 
     subargs = parse_ip_inputs(args.targets,args.auto,args.verbose) #Get target arg
-    alivetargets = parsealivehosts(subargs, args.overwrite, args.verbose)  # List of alive targets
+    alivetargets = parsealivehosts(ip_cleaner(subargs), args.overwrite, args.verbose)  # List of alive targets
     parsedtargets = parse_web_targets(alivetargets,subargs)
 
     print(f"\n{bcolors.YELLOW}[i] After filtering out non-web targets, run fuff. .{bcolors.RESET}")
