@@ -146,7 +146,7 @@ def run_wpscan_scan(args, verbose, auth : str = None, cookies : str = None, path
             "--disable-tls-checks",
             "--max-threads", "50",
             "--detection-mode", "aggressive",
-            "--no-update",
+            "--update",
             "--output", str(output_path),
             "--format", "json",
         ]

@@ -280,13 +280,7 @@ def parse_webtechresults(listoftargets, output_path = None, overwrite:bool = Fal
     else:
         results = {}
     for target in listoftargets:
-        safestring = ""
-        if "http" in target:
-            safestring = "http:" + target[8:]
-        elif "https" in target:
-            safestring = "https:" + target[9:]
-        else:
-            safestring = target
+        safestring = target.replace("://", "_").replace("/", "_")
 
         try:
             with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", "r") as f:

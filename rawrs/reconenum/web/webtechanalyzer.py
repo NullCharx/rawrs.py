@@ -21,13 +21,9 @@ def whatwebexecutor(targets, verbose:int =0):
     for target in targets:
         #Check if the target has a protocol scheme and remove the slahes off of it that would
         #make the path error (since slashes are used to indicate vertical FS movement)
-        safestring = ""
-        if "http" in target:
-            safestring = "http:" + target[8:]
-        elif "https" in target:
-            safestring = "https:" + target[9:]
-        else:
-            safestring = target
+
+        safestring = target.replace("://", "_").replace("/", "_")
+
         try:
             with open(f"{context_manager.current_project}/scans/webtech/whatweb_{safestring}.json", 'w+') as file:
                 file.write("")
