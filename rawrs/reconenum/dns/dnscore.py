@@ -21,7 +21,7 @@ def standard_dns_query(args):
           f"This scan checks for some standard ports and records: SOA, NS, A, AAAA, MX and SRV.{bcolors.RESET}")
     print(f"{bcolors.YELLOW}[i] Enterprises usually run on-premise authoritative DNS servers for internal names,"
           f"and less often for external names, otherwise they are managed by cloud providers (like Cloudfare, AWS...) {bcolors.RESET}")
-    print(f"{bcolors.YELLOW}[i] The targets from which to get info must be domains, not IPs. A reverse lookup (IP->DNS) is another query{bcolors.RESET}\n")
+    print(f"{bcolors.YELLOW}[i] The targets from which to get info must be domains, not IPs. A reverse lookup (IP->domain) is another query{bcolors.RESET}\n")
 
     parsedtargetips = parse_ip_inputs(args.targets, args.auto, args.verbose, True, True)
 

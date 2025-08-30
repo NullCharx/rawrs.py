@@ -56,20 +56,18 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False,
                 # Parrse as url
                 parsed = urlparse(part)
                 # If it got scheme (shceme://), check the ip and accept it if its valid
-                checkedip = None
                 if parsed.scheme:
                     test_parse = parsed
                     host = parsed.hostname
                     if host:
                         try:
                             ip = ipaddress.ip_address(host)
-                            checkedip = str(ip)
                         except ValueError as e:
                             if verbose > 0:
-                                print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}. Skipping{bcolors.RESET}")
+                                print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}.{bcolors.RESET}")
                     else:
                         if verbose>0:
-                            print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}. Skipping{bcolors.RESET}")
+                            print(f"\n{bcolors.FAIL}[-] Invalid scheme + ip adress combo '{part}': {e}.{bcolors.RESET}")
                 else:
                     #IF not check port. Port only works if there is a scheme present. Can be real or not
                     test_parse = urlparse(f'bogus://{part}')
@@ -83,11 +81,11 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False,
                         except ValueError as e:
                             if verbose > 0:
                                 print(
-                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}. Skipping{bcolors.RESET}")
+                                f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}': {e}.{bcolors.RESET}")
                     else:
                         if verbose > 0:
                             print(
-                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'.{bcolors.RESET}")
 
                 else:
                     #If no port and no scheme directly check the IP
@@ -107,11 +105,11 @@ def parse_ip_inputs(input_string, isauto : bool = False, verbose : bool = False,
                                     print(f"\n{bcolors.WARNING}[-] Non-IPs expected: Assuming {part} is a domain.{bcolors.RESET}")
                                     ips.append(str(entry))
                                 if verbose > 0 and not parsedomains:
-                                    print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from Skipping'{part}': {e}.{bcolors.RESET}")
+                                    print(f"\n{bcolors.FAIL}[-] Invalid IP address extracted from'{part}': {e}.{bcolors.RESET}")
 
                         if verbose > 0 and not parsedomains:
                             print(
-                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'. Skipping{bcolors.RESET}")
+                            f"\n{bcolors.FAIL}[-] Invalid IP address extracted from '{part}'.{bcolors.RESET}")
     if not ips:
         print(f"\n{bcolors.FAIL}[-] No valid IPs given. Aborting{bcolors.RESET}")
         exit(-1)

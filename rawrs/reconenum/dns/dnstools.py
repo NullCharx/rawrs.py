@@ -68,20 +68,22 @@ def check_zone_transfer(targets, nameserver=None):
         output_path = output_dir / f"dns_ztransfer{safestring}.json"
         cmd = ["dig", "@" + nameserver, target,"axfr"]
 
-        print(f"[+] Scanning {target} with dnsrecon via {nameserver} nameserver...\n")
+        print(f"[+] Checking {target} for zone transfers with dig via {nameserver} nameserver...\n")
         print(f"{bcolors.WARNING}[i] Running dig: {' '.join(cmd)}{bcolors.OKCYAN}")
 
         try:
             result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE)
             print(f"[+] Finished scanning {target}")
+            if result.returncode != 0:
+                print(f"{bcolors.WARNING}[!] Cannot perform unauthed {target} under {nameserver}{bcolors.RESET}")
+            else:
+                dnszonetransferdata[str(target)] = {"nameserver": nameserver,
+                                                    "dump": parse_dig_command(result.stdout.decode("utf-8"))}
+                with open(output_dir / "dns_zone_transfer_list.json", "w") as f:
+                    json.dump(dnszonetransferdata, f, indent=2)
         except subprocess.CalledProcessError as e:
             print(f"[!] Error scanning {target}: {e}")
 
-        if result.returncode != 0:
-            print(f"{bcolors.WARNING}[!] Cannot perform unauthed {target} under {nameserver}{bcolors.RESET}")
-        else:
-            dnszonetransferdata[str(target)] = {"nameserver": nameserver,
-                                           "dump": parse_dig_command(result.stdout.decode("utf-8"))}
 
-    with open(output_dir / "dns_zone_transfer_list.json", "w") as f:
-        json.dump(dnszonetransferdata, f, indent=2)
+
+
